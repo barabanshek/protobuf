@@ -60,5 +60,5 @@ set(protobuf_ABSL_USED_TARGETS
 )
 
 #
-add_executable(fun main.cc exp/stubs/exp/person.pb.cc)
+add_executable(fun main_src.cc exp/stubs/exp/person.pb.cc)
 target_link_libraries(fun protobuf ${protobuf_ABSL_USED_TARGETS} utf8_validity)

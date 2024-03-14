@@ -2,7 +2,8 @@ import subprocess
 
 # Env.
 protobuf_path = "/home/nikita/protobuf"
-benchmark_path = "main.cc"
+benchmark_tmpl_path = "main.cc"
+benchmark_source_path = "main_src.cc"
 
 def generate_message(num_lines):
     # Header of the message
@@ -29,12 +30,15 @@ def generate_setters(num_lines):
 #
 # Run fun.
 #
-N = 10
+N = 50
+STEP = 5
 
 for i in range(1, N + 1):
+    n_fields = i * STEP
+
     # Generate .proto
     with open(f'exp/person.proto', 'w') as f:
-        f.write(generate_message(i))
+        f.write(generate_message(n_fields))
 
     # Compile proto
     res = subprocess.run(f'{protobuf_path}/protoc exp/person.proto --cpp_out=exp/stubs', shell=True, text=True, capture_output=True)
@@ -42,17 +46,16 @@ for i in range(1, N + 1):
         print("Failed to compile proto: ", res.stderr)
 
     # Generate setters.
-    setters = generate_setters(i)
-    with open(benchmark_path, 'r') as f:
+    setters = generate_setters(n_fields)
+    with open(benchmark_tmpl_path, 'r') as f:
          lines = f.readlines()
-         original_lines = lines.copy()
 
     for j, line in enumerate(lines):
          if "<------------ SETTERS ------>" in line:
              lines.insert(j + 1, setters + '\n')
              break
 
-    with open(benchmark_path, 'w') as f:
+    with open(benchmark_source_path, 'w') as f:
         f.writelines(lines)
 
     # Build benchmark
@@ -66,8 +69,4 @@ for i in range(1, N + 1):
         print("Failed to run benchmark: ", res.stderr)
     else:
         result = res.stdout
-        print(f'iteration #{i}: {i} int32 fields, {result}')
-
-    # Restore original benchmark
-    with open(benchmark_path, 'w') as f:
-        f.writelines(original_lines)
+        print(f'iteration #{i}: {n_fields} int32 fields, {result}')

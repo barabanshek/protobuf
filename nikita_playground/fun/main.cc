@@ -4,8 +4,8 @@
 
 #include "person.pb.h"
 
-static constexpr size_t kNofIterations = 1000;
-static constexpr size_t kNofWarmUpIterations = 10;
+static constexpr size_t kNofIterations = 10000;
+static constexpr size_t kNofWarmUpIterations = 50;
 
 int main(int argc, char* argv[]) {
   // Verify that the version of the library that we linked against is
