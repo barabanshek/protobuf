@@ -32,7 +32,7 @@ def generate_setters(num_lines):
 #
 # Run fun.
 #
-N = 20
+N = 40
 STEP = 5
 
 results_cnt = []
@@ -77,8 +77,8 @@ for i in range(1, N + 1):
 
     # Parse results
     match = re.search(r'took = ([0-9]*) \[ns\], size.*', result)
-    results_cnt.append(n_fields)
-    results_time.append(match.group(1))
+    results_cnt.append((int)(n_fields))
+    results_time.append((int)(match.group(1)))
 
 # Plot
 plt.figure()
