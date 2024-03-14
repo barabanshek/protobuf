@@ -1,4 +1,6 @@
 import subprocess
+import re
+import matplotlib.pyplot as plt
 
 # Env.
 protobuf_path = "/home/nikita/protobuf"
@@ -30,9 +32,11 @@ def generate_setters(num_lines):
 #
 # Run fun.
 #
-N = 50
+N = 20
 STEP = 5
 
+results_cnt = []
+results_time = []
 for i in range(1, N + 1):
     n_fields = i * STEP
 
@@ -70,3 +74,17 @@ for i in range(1, N + 1):
     else:
         result = res.stdout
         print(f'iteration #{i}: {n_fields} int32 fields, {result}')
+
+    # Parse results
+    match = re.search(r'took = ([0-9]*) \[ns\], size.*', result)
+    results_cnt.append(n_fields)
+    results_time.append(match.group(1))
+
+# Plot
+plt.figure()
+plt.plot(results_cnt, results_time, marker='o')
+plt.xlabel('Number of int32 fields')
+plt.ylabel('Average time, ns')
+plt.grid()
+
+plt.savefig("res.pdf")
