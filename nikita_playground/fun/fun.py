@@ -3,6 +3,14 @@ import re
 import matplotlib.pyplot as plt
 import random
 
+#
+# Usage
+#
+# * export PROTO_PATH
+# * (first time run): mkdir build; cd build; cmake ..
+# * python3 fun.py 
+#
+
 # Env.
 protobuf_path = "/home/nikita/protobuf"
 benchmark_tmpl_path = "main.cc"

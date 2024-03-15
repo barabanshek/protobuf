@@ -11,13 +11,13 @@ add_definitions(-D_FORTIFY_SOURCE=2)
 find_package(GTest CONFIG REQUIRED)
 
 # Add abseil
-add_subdirectory(/home/nikita/protobuf/third_party/abseil-cpp abseil)
+add_subdirectory($ENV{PROTO_PATH}/third_party/abseil-cpp abseil)
 
 # Add Protobuf
-include_directories(/home/nikita/protobuf/src/)
-link_directories(/home/nikita/protobuf/)
-link_directories(/home/nikita/protobuf/third_party/utf8_range)
-link_directories(/home/nikita/protobuf/third_party/abseil-cpp)
+include_directories($ENV{PROTO_PATH}/src/)
+link_directories($ENV{PROTO_PATH})
+link_directories($ENV{PROTO_PATH}/third_party/utf8_range)
+link_directories($ENV{PROTO_PATH}/third_party/abseil-cpp)
 
 include_directories(exp/stubs)
 include_directories(exp/stubs/exp)
