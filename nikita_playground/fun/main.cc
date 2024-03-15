@@ -24,8 +24,6 @@ int main(int argc, char* argv[]) {
     outs.push_back("");
   }
 
-  std::string out;
-
   //
   // Benchmark serialize.
   //

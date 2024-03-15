@@ -10,7 +10,7 @@ benchmark_source_path = "main_src.cc"
 
 def generate_message(num_lines):
     # Header of the message
-    message_content = '''syntax = "proto2";
+    message_content = '''syntax = "proto3";
 
 message Person {
     '''
