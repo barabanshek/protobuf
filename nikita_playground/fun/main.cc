@@ -1,3 +1,5 @@
+#include <google/protobuf/util/message_differencer.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -5,7 +7,7 @@
 #include "person.pb.h"
 
 static constexpr size_t kNofIterations = 10000;
-static constexpr size_t kNofWarmUpIterations = 50;
+static constexpr size_t kNofWarmUpIterations = 100;
 
 int main(int argc, char* argv[]) {
   // Verify that the version of the library that we linked against is
@@ -24,6 +26,9 @@ int main(int argc, char* argv[]) {
 
   std::string out;
 
+  //
+  // Benchmark serialize.
+  //
   // Warm-up.
   for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
     if (!persons[i].SerializeToString(&outs[i])) {
@@ -32,11 +37,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Benchmark.
   std::chrono::steady_clock::time_point begin =
       std::chrono::steady_clock::now();
   for (size_t i = kNofWarmUpIterations; i < persons.size(); ++i) {
-    // Write the new address book back to disk.
     if (!persons[i].SerializeToString(&outs[i])) {
       std::cerr << "Benchmark error." << std::endl;
       return -1;
@@ -45,8 +48,45 @@ int main(int argc, char* argv[]) {
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   auto took_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-  std::cout << "took = " << took_ns / (persons.size() - kNofWarmUpIterations)
+  std::cout << "serialize took = "
+            << took_ns / (persons.size() - kNofWarmUpIterations)
             << " [ns], size = " << outs[0].size() << " Bytes" << std::endl;
+
+  //
+  // Benchmark deserialize.
+  //
+  std::vector<Person> persons_out;
+  for (size_t i = 0; i < persons.size(); ++i) persons_out.push_back(Person());
+
+  // Warm-up.
+  for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
+    if (!persons_out[i].ParseFromString(outs[i])) {
+      std::cerr << "Benchmark error." << std::endl;
+      return -1;
+    }
+  }
+
+  begin = std::chrono::steady_clock::now();
+  for (size_t i = kNofWarmUpIterations; i < persons.size(); ++i) {
+    if (!persons_out[i].ParseFromString(outs[i])) {
+      std::cerr << "Benchmark error." << std::endl;
+      return -1;
+    }
+  }
+  end = std::chrono::steady_clock::now();
+  took_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+  std::cout << "deserialize took = "
+            << took_ns / (persons.size() - kNofWarmUpIterations)
+            << " [ns], size = " << outs[0].size() << " Bytes" << std::endl;
+
+  // Compare.
+  bool all_correct = true;
+  for (size_t i = 0; i < persons.size() && all_correct; ++i)
+    all_correct = google::protobuf::util::MessageDifferencer::Equals(
+        persons[i], persons_out[i]);
+  std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH")
+            << std::endl;
 
   // Optional:  Delete all global objects allocated by libprotobuf.
   google::protobuf::ShutdownProtobufLibrary();

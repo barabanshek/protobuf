@@ -1,6 +1,7 @@
 import subprocess
 import re
 import matplotlib.pyplot as plt
+import random
 
 # Env.
 protobuf_path = "/home/nikita/protobuf"
@@ -26,17 +27,22 @@ message Person {
 def generate_setters(num_lines):
     msg = ""
     for i in range(num_lines):
-        msg += f'   person.set_age_{i+1}({i+1});\n'
+        val = 0
+        size = random.randint(1, 4)
+        for j in range(size):
+            val |= (random.randint(0, 255) << j * 8)
+        msg += f'   person.set_age_{i+1}({val} + i % 8);\n'
     return msg
 
 #
 # Run fun.
 #
 N = 40
-STEP = 5
+STEP = 10
 
 results_cnt = []
-results_time = []
+results_ser_time = []
+results_deser_time = []
 for i in range(1, N + 1):
     n_fields = i * STEP
 
@@ -76,15 +82,28 @@ for i in range(1, N + 1):
         print(f'iteration #{i}: {n_fields} int32 fields, {result}')
 
     # Parse results
-    match = re.search(r'took = ([0-9]*) \[ns\], size.*', result)
+    if "ERROR" in result:
+        print("Error found, stop here!")
+        exit(-1)
     results_cnt.append((int)(n_fields))
-    results_time.append((int)(match.group(1)))
+    match = re.search(r'serialize took = ([0-9]*) \[ns\], size.*', result)
+    results_ser_time.append((int)(match.group(1)))
+    match = re.search(r'deserialize took = ([0-9]*) \[ns\], size.*', result)
+    results_deser_time.append((int)(match.group(1)))
 
 # Plot
 plt.figure()
-plt.plot(results_cnt, results_time, marker='o')
-plt.xlabel('Number of int32 fields')
-plt.ylabel('Average time, ns')
-plt.grid()
+fig, ax = plt.subplots(2)
+ax[0].plot(results_cnt, results_ser_time, marker='o', label='serialize')
+ax[0].legend()
+ax[0].grid()
+ax[0].set_xlabel('Number of int32 fields')
+ax[0].set_ylabel('Average time, ns')
 
-plt.savefig("res.pdf")
+ax[1].plot(results_cnt, results_deser_time, marker='o', label='deserialize')
+ax[1].legend()
+ax[1].grid()
+ax[1].set_xlabel('Number of int32 fields')
+ax[1].set_ylabel('Average time, ns')
+
+plt.savefig("res.pdf", bbox_inches='tight')
