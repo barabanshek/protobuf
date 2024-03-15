@@ -14,13 +14,13 @@ int main(int argc, char* argv[]) {
   // compatible with the version of the headers we compiled against.
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  std::vector<Person> persons;
+  std::vector<M> messages;
   std::vector<std::string> outs;
   for (size_t i = 0; i < kNofIterations; ++i) {
-    Person person;
+    M m;
     // <------------ SETTERS ------>
 
-    persons.push_back(person);
+    messages.push_back(m);
     outs.push_back("");
   }
 
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   //
   // Warm-up.
   for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-    if (!persons[i].SerializeToString(&outs[i])) {
+    if (!messages[i].SerializeToString(&outs[i])) {
       std::cerr << "Benchmark error." << std::endl;
       return -1;
     }
@@ -37,8 +37,8 @@ int main(int argc, char* argv[]) {
 
   std::chrono::steady_clock::time_point begin =
       std::chrono::steady_clock::now();
-  for (size_t i = kNofWarmUpIterations; i < persons.size(); ++i) {
-    if (!persons[i].SerializeToString(&outs[i])) {
+  for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
+    if (!messages[i].SerializeToString(&outs[i])) {
       std::cerr << "Benchmark error." << std::endl;
       return -1;
     }
@@ -47,26 +47,26 @@ int main(int argc, char* argv[]) {
   auto took_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
   std::cout << "serialize took = "
-            << took_ns / (persons.size() - kNofWarmUpIterations)
+            << took_ns / (messages.size() - kNofWarmUpIterations)
             << " [ns], size = " << outs[0].size() << " Bytes" << std::endl;
 
   //
   // Benchmark deserialize.
   //
-  std::vector<Person> persons_out;
-  for (size_t i = 0; i < persons.size(); ++i) persons_out.push_back(Person());
+  std::vector<M> messages_out;
+  for (size_t i = 0; i < messages.size(); ++i) messages_out.push_back(M());
 
   // Warm-up.
   for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-    if (!persons_out[i].ParseFromString(outs[i])) {
+    if (!messages_out[i].ParseFromString(outs[i])) {
       std::cerr << "Benchmark error." << std::endl;
       return -1;
     }
   }
 
   begin = std::chrono::steady_clock::now();
-  for (size_t i = kNofWarmUpIterations; i < persons.size(); ++i) {
-    if (!persons_out[i].ParseFromString(outs[i])) {
+  for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
+    if (!messages_out[i].ParseFromString(outs[i])) {
       std::cerr << "Benchmark error." << std::endl;
       return -1;
     }
@@ -75,14 +75,14 @@ int main(int argc, char* argv[]) {
   took_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
   std::cout << "deserialize took = "
-            << took_ns / (persons.size() - kNofWarmUpIterations)
+            << took_ns / (messages.size() - kNofWarmUpIterations)
             << " [ns], size = " << outs[0].size() << " Bytes" << std::endl;
 
   // Compare.
   bool all_correct = true;
-  for (size_t i = 0; i < persons.size() && all_correct; ++i)
+  for (size_t i = 0; i < messages.size() && all_correct; ++i)
     all_correct = google::protobuf::util::MessageDifferencer::Equals(
-        persons[i], persons_out[i]);
+        messages[i], messages_out[i]);
   std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH")
             << std::endl;
 

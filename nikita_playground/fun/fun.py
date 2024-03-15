@@ -1,7 +1,7 @@
 import subprocess
 import re
 import matplotlib.pyplot as plt
-import random
+from proto_generator import *
 
 #
 # Usage
@@ -16,35 +16,11 @@ protobuf_path = "/home/nikita/protobuf"
 benchmark_tmpl_path = "main.cc"
 benchmark_source_path = "main_src.cc"
 
-def generate_message(num_lines):
-    # Header of the message
-    message_content = '''syntax = "proto3";
-
-message Person {
-    '''
-
-    # Generate each line based on the number of lines specified
-    for i in range(num_lines):
-        message_content += f'  optional int32 age_{i+1} = {i+1};\n'
-
-    # Footer of the message
-    message_content += '}\n\n'
-
-    return message_content
-
-def generate_setters(num_lines):
-    msg = ""
-    for i in range(num_lines):
-        val = 0
-        size = random.randint(1, 4)
-        for j in range(size):
-            val |= (random.randint(0, 255) << j * 8)
-        msg += f'   person.set_age_{i+1}({val} + i % 8);\n'
-    return msg
-
 #
 # Run fun.
 #
+W = 2
+D = 2
 N = 40
 STEP = 10
 
@@ -56,7 +32,7 @@ for i in range(1, N + 1):
 
     # Generate .proto
     with open(f'exp/person.proto', 'w') as f:
-        f.write(generate_message(n_fields))
+        f.write(NestedMessageGenerator.generate_message(n_fields, D, W))
 
     # Compile proto
     res = subprocess.run(f'{protobuf_path}/protoc exp/person.proto --cpp_out=exp/stubs', shell=True, text=True, capture_output=True)
@@ -64,7 +40,7 @@ for i in range(1, N + 1):
         print("Failed to compile proto: ", res.stderr)
 
     # Generate setters.
-    setters = generate_setters(n_fields)
+    setters = NestedMessageGenerator.generate_setters(n_fields, D, W)
     with open(benchmark_tmpl_path, 'r') as f:
          lines = f.readlines()
 
