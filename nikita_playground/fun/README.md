@@ -1,3 +1,3 @@
 ### Results
 
-![alt text][https://github.com/barabanshek/protobuf/blob/nikita/nikita_playground/fun/res.pdf]
+![results](https://github.com/barabanshek/protobuf/blob/nikita/nikita_playground/fun/res.pdf)
