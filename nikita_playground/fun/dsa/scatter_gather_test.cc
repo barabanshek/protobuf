@@ -1,5 +1,6 @@
 #include "scatter_gather.h"
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -7,8 +8,8 @@
 static constexpr size_t nOfIterations = 10000;
 
 // static constexpr size_t T = 1 * 1024 * 1024;
-static constexpr size_t N = 128;
-static constexpr size_t M = 128;
+static constexpr size_t N = 512;
+static constexpr size_t M = 64;
 
 int main() {
   // Data.
@@ -27,12 +28,18 @@ int main() {
   }
 
   // ScatterGather'er.
-  ScatterGather stuff(Dsa::Shared, N);
+  ScatterGather stuff(Dsa::Dedicated, N);
   if (stuff.Init()) {
     std::cout << "Error" << std::endl;
     return -1;
   }
   std::cout << "ScatterGather is initialized and ready" << std::endl;
+
+  // Generate random permutations.
+  std::vector<size_t> idxs;
+  for (size_t i = 0; i < nOfIterations; ++i) idxs.push_back(i);
+  std::srand(unsigned(std::time(0)));
+  std::random_shuffle(idxs.begin(), idxs.end());
 
   //
   // Do Gather.
@@ -41,17 +48,18 @@ int main() {
   // <-------------- time start
   auto begin = std::chrono::steady_clock::now();
   for (size_t it = 0; it < scattered_batch.size(); ++it) {
+    size_t b_idx = idxs[it];
     ScatterGather::Schema schema;
     schema.reserve(N);
-    for (const auto& el : scattered_batch[it]) {
+    for (const auto& el : scattered_batch[b_idx]) {
       schema.push_back(std::make_tuple(el.data(), el.size()));
     }
     size_t out_size = 0;
-    if (stuff.Gather(schema, out[it].data(), &out_size)) {
+    if (stuff.Gather(schema, out[b_idx].data(), &out_size)) {
       std::cout << "Failed to gather" << std::endl;
       return -1;
     }
-    assert(out[it].size() == out_size);
+    assert(out[b_idx].size() == out_size);
   }
   auto end = std::chrono::steady_clock::now();
   auto took_ns =
@@ -74,14 +82,16 @@ int main() {
   }
 
   // <-------------- time start
+  stuff.SetZero();
   begin = std::chrono::steady_clock::now();
   for (size_t it = 0; it < scattered_out_batch.size(); ++it) {
+    size_t b_idx = idxs[it];
     ScatterGather::Schema schema;
     schema.reserve(N);
-    for (const auto& el : scattered_out_batch[it]) {
+    for (const auto& el : scattered_out_batch[b_idx]) {
       schema.push_back(std::make_tuple(el.data(), el.size()));
     }
-    if (stuff.Scatter(out[it].data(), schema)) {
+    if (stuff.Scatter(out[b_idx].data(), schema)) {
       std::cout << "Failed to scatter" << std::endl;
       return -1;
     }
@@ -93,7 +103,7 @@ int main() {
             << std::endl;
   // -----------------> time stop
 
-  std::cout << "Scatter done" << std::endl;
+  std::cout << "Scatter done: " << stuff.GetTime() << std::endl;
 
   //
   // Verify.

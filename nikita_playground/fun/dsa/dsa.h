@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <vector>
 
 class Dsa {
  public:
@@ -23,20 +24,25 @@ class Dsa {
 
     if (SetupWq()) return -1;
 
-    assert(wq_ != nullptr);
-    assert(wq_reg_ != nullptr);
-    assert(fd_ > 0);
+    assert(wqs_.size() > 0);
+    assert(wq_regs_.size() > 0);
+    assert(fds_.size() > 0);
 
     return 0;
   }
 
-  void* GetWqRegister() const { return wq_reg_; }
+  size_t GetNumOfWQs() const { return wqs_.size(); }
+
+  void* GetWqRegister(size_t i) const { return wq_regs_[i]; }
 
   Path GetPath() const { return path_; }
 
-  size_t GetBatchSize() const { return accfg_wq_get_max_batch_size(wq_); }
+  size_t GetBatchSize() const {
+    if (wqs_.size() == 0) return 0;
+    return accfg_wq_get_max_batch_size(wqs_[0]);
+  }
 
-  bool IsReady() const { return wq_reg_ != nullptr; }
+  bool IsReady() const { return wq_regs_.size() > 0; }
 
   static inline void movdir64b(volatile void* portal, void* desc) {
     asm volatile(
@@ -84,12 +90,11 @@ class Dsa {
 
         if (SetupWqRegister(wq)) return -1;
 
-        wq_ = wq;
-        return 0;
+        wqs_.push_back(wq);
       }
     }
 
-    return -1;
+    return wqs_.size() == 0;
   }
 
   int SetupWqRegister(accfg_wq* wq) {
@@ -100,26 +105,30 @@ class Dsa {
       return -1;
     }
 
-    fd_ = open(path, O_RDWR);
+    int fd_ = open(path, O_RDWR);
     if (fd_ < 0) {
       std::cerr << "Error opening WQ file" << std::endl;
       return -1;
     }
 
-    wq_reg_ =
+    void* wq_reg =
         mmap(NULL, PAGE_SIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, fd_, 0);
-    if (wq_reg_ == MAP_FAILED) {
+    if (wq_reg == MAP_FAILED) {
       std::cerr << "Error mapping WQ file" << std::endl;
       close(fd_);
       return -1;
     }
 
+    wq_regs_.push_back(wq_reg);
+    fds_.push_back(fd_);
     return 0;
   }
 
   void DeInit() {
-    if (wq_reg_) munmap(wq_reg_, PAGE_SIZE);
-    if (fd_ > 0) close(fd_);
+    for (auto& wq_reg : wq_regs_) munmap(wq_reg, PAGE_SIZE);
+    wq_regs_.clear();
+    for (auto& fd : fds_) close(fd);
+    fds_.clear();
     accfg_unref(ctx_);
   }
 
@@ -128,9 +137,9 @@ class Dsa {
 
   //
   accfg_ctx* ctx_;
-  accfg_wq* wq_;
-  void* wq_reg_;
-  int fd_;
+  std::vector<accfg_wq*> wqs_;
+  std::vector<void*> wq_regs_;
+  std::vector<int> fds_;
 };
 
 #endif

@@ -12,4 +12,4 @@ include_directories($ENV{IDX_SDK})
 
 #
 add_executable(scatter_gather_test scatter_gather_test.cc)
-target_link_libraries(scatter_gather_test LINK_PUBLIC accel-config)
+target_link_libraries(scatter_gather_test LINK_PUBLIC accel-config numa)
