@@ -1,11 +1,14 @@
-Initial benchmark on comparison between IAA and protobuf, but good
+### Results
 
-Does not compile with locally installed protobuf from git repo, yet
+Now works with custom protobuf version!
+Building using cmake (make version kept for bookeeping)
 
-Should work with Makefile if protobuf is installed globally
+Instructions:
+(first time) touch dummy.pb.cc
+(first time) export PROTO\_PATH=/home/your/proto/path
+mkdir build ; cd build ; cmake ..
+cd ..
+python3 cmake\_get\_results.py
 
-Tested with libprotoc 3.20.0-rc1
 
-Benchmark produces results in a .csv file
-
-python script to generate plots --> soon
+![Current tedious bench protobuf results in spr-ext-1](https://github.com/barabanshek/protobuf/blob/christos/christos_playground/tedious_varint_bench/res.pdf)
