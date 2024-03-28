@@ -10,5 +10,6 @@ mkdir build ; cd build ; cmake ..
 cd ..
 python3 cmake\_get\_results.py
 
+Also don't forget to change the proto path inside cmake\_get\_results.py
 
 ![Current tedious bench protobuf results in spr-ext-1](https://github.com/barabanshek/protobuf/blob/christos/christos_playground/tedious_varint_bench/res.pdf)
