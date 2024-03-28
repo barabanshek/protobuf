@@ -90,6 +90,15 @@ statGatherer smallVarintTest(int mode) {
 
 	stats.deserTime  = ((float) deserDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
 
+    // compare deserialized object with original object
+  	bool all_correct = true;
+  	for (size_t i = 0; i < NUM_ITER && all_correct; ++i) {
+		std::string validationString;
+		testDummys[i].SerializeToString(&validationString);
+		all_correct = serialized[i] == validationString;
+		assert(all_correct);
+	}
+
 	/*
   	std::cout << "Deserialization took " << deserDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
 	std::cout << "DESERIALIZATION STATS" << std::endl;
@@ -225,6 +234,15 @@ statGatherer biggerVarintTest(int mode) {
 
 	stats.deserTime  = ((float) deserDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
 
+    // compare deserialized object with original object
+  	bool all_correct = true;
+  	for (size_t i = 0; i < NUM_ITER && all_correct; ++i) {
+		std::string validationString;
+		testDummys[i].SerializeToString(&validationString);
+		all_correct = serialized[i] == validationString;
+		assert(all_correct);
+	}
+
 	/*
   	std::cout << "Deserialization took " << deserDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
 	std::cout << "DESERIALIZATION STATS" << std::endl;
@@ -359,6 +377,15 @@ statGatherer evenBiggerVarintTest(int mode) {
   	auto deserDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(deserEndTime - deserStartTime);
 
 	stats.deserTime  = ((float) deserDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
+
+    // compare deserialized object with original object
+  	bool all_correct = true;
+  	for (size_t i = 0; i < NUM_ITER && all_correct; ++i) {
+		std::string validationString;
+		testDummys[i].SerializeToString(&validationString);
+		all_correct = serialized[i] == validationString;
+		assert(all_correct);
+	}
 
 	/*
   	std::cout << "Deserialization took " << deserDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
