@@ -37,10 +37,11 @@ struct statGatherer {
 statGatherer smallVarintTest(int mode) {
 	statGatherer stats;
 
-	smallVarintDummy tmpStruct;
-	initializeSmallDummy(&tmpStruct, mode);
-	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct);
-	int initial_value_at_id_50 = tmpStruct.id50();
+	smallVarintDummy tmpStruct[NUM_ITER];
+	for (uint32_t i = 0; i < NUM_ITER; i++)
+		initializeSmallDummy(&tmpStruct[i], mode);
+	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct[0]);
+	int initial_value_at_id_50 = tmpStruct[0].id50();
 
 	/*****************************SERIALIZATION BENCH*****************************/
 	//std::cout << "**********************************************************" << std::endl;
@@ -48,20 +49,20 @@ statGatherer smallVarintTest(int mode) {
 
 	// warmup proto serialization
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serEndTime = std::chrono::high_resolution_clock::now();
   	auto serDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(serEndTime - serStartTime);
 
 	stats.serTime  = ((float) serDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.serRatio = ((float) sizeof(tmpStruct)) / serialized[0].size();
+	stats.serRatio = ((float) sizeof(tmpStruct[0])) / serialized[0].size();
 	/*
   	std::cout << "Serialization took " << serDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
 	std::cout << "SERIALIZATION STATS" << std::endl;
@@ -103,20 +104,20 @@ statGatherer smallVarintTest(int mode) {
 
 	// warmup IAA icache
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compEndTime = std::chrono::high_resolution_clock::now();
   	auto compDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(compEndTime - compStartTime);
 
 	stats.compTime  = ((float) compDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.compRatio = ((float) sizeof(tmpStruct)) / comprOutputSize[0];
+	stats.compRatio = ((float) sizeof(tmpStruct[0])) / comprOutputSize[0];
 
 	/*
   	std::cout << "Compression took " << compDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
@@ -154,7 +155,7 @@ statGatherer smallVarintTest(int mode) {
 	*/
 	
 	// validation
-	uint32_t structSize = sizeof(tmpStruct);
+	uint32_t structSize = sizeof(tmpStruct[0]);
 	for (uint32_t i = 0; i < NUM_ITER; i++) {
 		assert(decomprOutputSize[i] == structSize);
 	}
@@ -171,10 +172,11 @@ statGatherer smallVarintTest(int mode) {
 statGatherer biggerVarintTest(int mode) {
 	statGatherer stats;
 
-	biggerVarintDummy tmpStruct;
-	initializeBiggerDummy(&tmpStruct, mode);
-	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct);
-	int initial_value_at_id_50 = tmpStruct.id50();
+	biggerVarintDummy tmpStruct[NUM_ITER];
+	for (uint32_t i = 0; i < NUM_ITER; i++)
+		initializeBiggerDummy(&tmpStruct[i], mode);
+	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct[0]);
+	int initial_value_at_id_50 = tmpStruct[0].id50();
 
 	/*****************************SERIALIZATION BENCH*****************************/
 	//std::cout << "**********************************************************" << std::endl;
@@ -182,20 +184,20 @@ statGatherer biggerVarintTest(int mode) {
 
 	// warmup proto serialization
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serEndTime = std::chrono::high_resolution_clock::now();
   	auto serDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(serEndTime - serStartTime);
 
 	stats.serTime  = ((float) serDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.serRatio = ((float) sizeof(tmpStruct)) / serialized[0].size();
+	stats.serRatio = ((float) sizeof(tmpStruct[0])) / serialized[0].size();
 	/*
   	std::cout << "Serialization took " << serDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
 	std::cout << "SERIALIZATION STATS" << std::endl;
@@ -236,20 +238,20 @@ statGatherer biggerVarintTest(int mode) {
 	uint32_t comprOutputSize[NUM_ITER];
 
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compEndTime = std::chrono::high_resolution_clock::now();
   	auto compDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(compEndTime - compStartTime);
 
 	stats.compTime  = ((float) compDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.compRatio = ((float) sizeof(tmpStruct)) / comprOutputSize[0];
+	stats.compRatio = ((float) sizeof(tmpStruct[0])) / comprOutputSize[0];
 
 	/*
   	std::cout << "Compression took " << compDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
@@ -287,7 +289,7 @@ statGatherer biggerVarintTest(int mode) {
 	*/
 	
 	// validation
-	uint32_t structSize = sizeof(tmpStruct);
+	uint32_t structSize = sizeof(tmpStruct[0]);
 	for (uint32_t i = 0; i < NUM_ITER; i++) {
 		assert(decomprOutputSize[i] == structSize);
 	}
@@ -304,10 +306,11 @@ statGatherer biggerVarintTest(int mode) {
 statGatherer evenBiggerVarintTest(int mode) {
 	statGatherer stats;
 
-	evenBiggerVarintDummy tmpStruct;
-	initializeEvenBiggerDummy(&tmpStruct, mode);
-	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct);
-	int initial_value_at_id_50 = tmpStruct.id50();
+	evenBiggerVarintDummy tmpStruct[NUM_ITER];
+	for (uint32_t i = 0; i < NUM_ITER; i++)
+		initializeEvenBiggerDummy(&tmpStruct[i], mode);
+	uint8_t* ogByteStream = reinterpret_cast<uint8_t*>(&tmpStruct[0]);
+	int initial_value_at_id_50 = tmpStruct[0].id50();
 
 	/*****************************SERIALIZATION BENCH*****************************/
 	//std::cout << "**********************************************************" << std::endl;
@@ -315,20 +318,20 @@ statGatherer evenBiggerVarintTest(int mode) {
 
 	// warmup proto deserialization
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		tmpStruct.SerializeToString(&serialized[i]);
+		tmpStruct[i].SerializeToString(&serialized[i]);
 	}
 
     auto serEndTime = std::chrono::high_resolution_clock::now();
   	auto serDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(serEndTime - serStartTime);
 
 	stats.serTime  = ((float) serDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.serRatio = ((float) sizeof(tmpStruct)) / serialized[0].size();
+	stats.serRatio = ((float) sizeof(tmpStruct[0])) / serialized[0].size();
 	/*
   	std::cout << "Serialization took " << serDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
 	std::cout << "SERIALIZATION STATS" << std::endl;
@@ -371,20 +374,20 @@ statGatherer evenBiggerVarintTest(int mode) {
 
 	// warmup IAA icache
 	for (uint32_t i = 0; i < WARMUP_NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compStartTime = std::chrono::high_resolution_clock::now();
 
 	for (uint32_t i = WARMUP_NUM_ITER; i < NUM_ITER; i++) {
-		compress_with_IAA(ogByteStream, sizeof(tmpStruct), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+		compress_with_IAA(ogByteStream, sizeof(tmpStruct[i]), compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
 	}
 
     auto compEndTime = std::chrono::high_resolution_clock::now();
   	auto compDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(compEndTime - compStartTime);
 
 	stats.compTime  = ((float) compDuration.count()) / (NUM_ITER - WARMUP_NUM_ITER);
-	stats.compRatio = ((float) sizeof(tmpStruct)) / comprOutputSize[0];
+	stats.compRatio = ((float) sizeof(tmpStruct[0])) / comprOutputSize[0];
 
 	/*
   	std::cout << "Compression took " << compDuration.count() / NUM_ITER << " nanoseconds" << std::endl;
@@ -422,7 +425,7 @@ statGatherer evenBiggerVarintTest(int mode) {
 	*/
 	
 	// validation
-	uint32_t structSize = sizeof(tmpStruct);
+	uint32_t structSize = sizeof(tmpStruct[0]);
 	for (uint32_t i = 0; i < NUM_ITER; i++) {
 		assert(decomprOutputSize[i] == structSize);
 	}
