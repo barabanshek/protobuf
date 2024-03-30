@@ -76,7 +76,7 @@ for i in range(1, N + 1):
     results_deser_time.append((int)(match.group(1)))
 
 # Plot
-plt.figure()
+plt.figure(figsize=(16, 12))
 fig, ax = plt.subplots(2)
 ax[0].plot(results_cnt, results_ser_time, marker='o', label='compression')
 ax[0].legend()
@@ -90,4 +90,6 @@ ax[1].grid()
 ax[1].set_xlabel('Number of int32 fields')
 ax[1].set_ylabel('Average time, ns')
 
-plt.savefig("iaa_res.pdf", bbox_inches='tight')
+plt.subplots_adjust(hspace=0.5)
+
+plt.savefig("iaa_res.pdf", format='pdf', bbox_inches='tight')
