@@ -402,6 +402,7 @@ void SingularMessage::GenerateSerializeWithCachedSizesToArray(
     )cc");
   } else {
     p->Emit(R"cc(
+      std::cout << "PRINT InternalWrite$declared_type$ $fullname$.$name$ " << *$field_$ << "\n";
       target = stream->EnsureSpace(target);
       target = $pbi$::WireFormatLite::InternalWrite$declared_type$(
           $number$, *$field_$, target, stream);
@@ -919,6 +920,7 @@ void RepeatedMessage::GenerateSerializeWithCachedSizesToArray(
                 } else {
                   p->Emit(
                       R"cc(
+                        std::cout << "PRINT InternalWrite$declared_type$ $fullname$.$name$ " << **it << "\n";
                         target = stream->EnsureSpace(target);
                         target =
                             $pbi$::WireFormatLite::InternalWrite$declared_type$(
@@ -939,6 +941,7 @@ void RepeatedMessage::GenerateSerializeWithCachedSizesToArray(
                 if (field_->type() == FieldDescriptor::TYPE_MESSAGE) {
                   p->Emit(
                       R"cc(
+                        std::cout << "PRINT REPEATED FIELD InternalWrite$declared_type$->_internal_$name$() rep-" << i << "\n";
                         const auto& repfield = this->_internal_$name$().Get(i);
                         target =
                             $pbi$::WireFormatLite::InternalWrite$declared_type$(
@@ -948,6 +951,7 @@ void RepeatedMessage::GenerateSerializeWithCachedSizesToArray(
                 } else {
                   p->Emit(
                       R"cc(
+                        std::cout << "PRINT InternalWrite$declared_type$ [rep-" << i << "] $fullname$.$name$ " << this->_internal_$name$().Get(i) << "\n";
                         target = stream->EnsureSpace(target);
                         target =
                             $pbi$::WireFormatLite::InternalWrite$declared_type$(

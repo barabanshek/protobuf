@@ -101,6 +101,7 @@ class SingularEnum : public FieldGeneratorBase {
 
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override {
     p->Emit(R"cc(
+      std::cout << "PRINT WriteEnumToArray $full_name$.$name$ " <<  ::_pbi::WireFormatLite::EnumSize(this->_internal_$name$()) << "\n";
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           $number$, this->_internal_$name$(), target);
@@ -500,6 +501,7 @@ void RepeatedEnum::GenerateSerializeWithCachedSizesToArray(
           {
             $byte_size$;
             if (byte_size > 0) {
+              std::cout << "PRINT WriteEnumPacked $full_name$.$name$ " <<  byte_size << "\n";
               target = stream->WriteEnumPacked($number$, _internal_$name$(),
                                                byte_size, target);
             }
@@ -509,6 +511,7 @@ void RepeatedEnum::GenerateSerializeWithCachedSizesToArray(
   }
   p->Emit(R"cc(
     for (int i = 0, n = this->_internal_$name$_size(); i < n; ++i) {
+      std::cout << "PRINT WriteEnumToArray [rep-" << i << "] $full_name$.$name$ " << ::_pbi::WireFormatLite::EnumSize(this->_internal_$name$().Get(i)) << "\n";
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           $number$, static_cast<$Enum$>(this->_internal_$name$().Get(i)),
