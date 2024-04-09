@@ -238,16 +238,6 @@ void SingularPrimitive::GenerateInlineAccessorDefinitions(
 
 void SingularPrimitive::GenerateSerializeWithCachedSizesToArray(
     io::Printer* p) const {
-  if (FixedSize(field_->type()).has_value()) {
-     p->Emit({{"kFixedBytes", *FixedSize(field_->type())}},
-             R"cc(
-       std::cout << "PRINT Write$DeclaredType$ToArray $full_name$.$name$ " << $kFixedBytes$ << "\n";
-     )cc");
-  } else {
-     p->Emit(R"cc(
-       std::cout << "PRINT Write$DeclaredType$ToArray $full_name$.$name$ " << ::_pbi::WireFormatLite::$DeclaredType$Size(this->_internal_$name$()) << "\n";
-     )cc");
-  }
   if ((field_->number() < 16) &&
       (field_->type() == FieldDescriptor::TYPE_INT32 ||
        field_->type() == FieldDescriptor::TYPE_INT64 ||
@@ -266,6 +256,18 @@ void SingularPrimitive::GenerateSerializeWithCachedSizesToArray(
       target = ::_pbi::WireFormatLite::Write$DeclaredType$ToArray(
           $number$, this->_internal_$name$(), target);
     )cc");
+  }
+  if (FixedSize(field_->type()).has_value()) {
+     p->Emit({{"kFixedBytes", *FixedSize(field_->type())}},
+             R"cc(
+             }{
+       std::cout << "PRINT Write$DeclaredType$ToArray $full_name$.$name$ " << $kFixedBytes$ << "\n";
+     )cc");
+  } else {
+     p->Emit(R"cc(
+             }{
+       std::cout << "PRINT Write$DeclaredType$ToArray $full_name$.$name$ " << sizeof(this->_internal_$name$()) << "\n";
+     )cc");
   }
 }
 
@@ -567,7 +569,7 @@ void RepeatedPrimitive::GenerateSerializeWithCachedSizesToArray(
     } else {
         p->Emit(R"cc(
           for (int i = 0, n = this->_internal_$name$_size(); i < n; ++i) {
-            std::cout << "PRINT Write$DeclaredType$ToArray [rep-" << i << "] $full_name$.$name$ " << ::_pbi::WireFormatLite::$DeclaredType$Size(this->_internal_$name$().Get(i)) << "\n";
+            std::cout << "PRINT Write$DeclaredType$ToArray [rep-" << i << "] $full_name$.$name$ " << sizeof(this->_internal_$name$().Get(i)) << "\n";
             target = stream->EnsureSpace(target);
             target = ::_pbi::WireFormatLite::Write$DeclaredType$ToArray(
                 $number$, this->_internal_$name$().Get(i), target);
@@ -604,9 +606,16 @@ void RepeatedPrimitive::GenerateSerializeWithCachedSizesToArray(
       },
       R"cc(
         {
+          int pre_ser_size = 0;
+          auto start = _internal_$name$().data();
+          auto end = start + _internal_$name$().size();
+          for (auto it = start; it < end; it++) {
+              pre_ser_size += sizeof(*it);
+          }
+          std::cout << "PRINT Write$DeclaredType$Packed $full_name$.$name$ " << pre_ser_size << "\n";
+
           int byte_size = $byte_size$;
           if (byte_size > 0) {
-            std::cout << "PRINT Write$DeclaredType$Packed $full_name$.$name$ " << byte_size << "\n";
             target = stream->Write$DeclaredType$Packed(
                 $number$, _internal_$name$(), byte_size, target);
           }

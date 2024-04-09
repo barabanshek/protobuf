@@ -101,10 +101,11 @@ class SingularEnum : public FieldGeneratorBase {
 
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override {
     p->Emit(R"cc(
-      std::cout << "PRINT WriteEnumToArray $full_name$.$name$ " <<  ::_pbi::WireFormatLite::EnumSize(this->_internal_$name$()) << "\n";
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           $number$, this->_internal_$name$(), target);
+        } {
+      std::cout << "PRINT WriteEnumToArray $full_name$.$name$ " <<  sizeof(this->_internal_$name$()) << "\n";
     )cc");
   }
 
@@ -483,13 +484,17 @@ void RepeatedEnum::GenerateSerializeWithCachedSizesToArray(
              [&] {
                if (has_cached_size_) {
                  p->Emit(
-                     R"cc(std::size_t byte_size = $cached_size_$.Get();)cc");
+                     R"cc(std::size_t byte_size = $cached_size_$.Get();
+                          auto count = static_cast<std::size_t>(this->_internal_$name$_size());
+                          std::size_t pre_ser_size = count * sizeof(this->_internal_$name$().Get(0));
+                          )cc");
                } else {
                  p->Emit(R"cc(
-                   std::size_t byte_size = 0;
+                   std::size_t byte_size = 0, pre_ser_size;
                    auto count = static_cast<std::size_t>(this->_internal_$name$_size());
 
                    for (std::size_t i = 0; i < count; ++i) {
+                     pre_ser_size += sizeof(this->_internal_$name$().Get(static_cast<int>(i)));
                      byte_size += ::_pbi::WireFormatLite::EnumSize(
                          this->_internal_$name$().Get(static_cast<int>(i)));
                    }
@@ -500,8 +505,8 @@ void RepeatedEnum::GenerateSerializeWithCachedSizesToArray(
         R"cc(
           {
             $byte_size$;
+            std::cout << "PRINT WriteEnumPacked $full_name$.$name$ " <<  pre_ser_size << "\n";
             if (byte_size > 0) {
-              std::cout << "PRINT WriteEnumPacked $full_name$.$name$ " <<  byte_size << "\n";
               target = stream->WriteEnumPacked($number$, _internal_$name$(),
                                                byte_size, target);
             }
@@ -511,7 +516,7 @@ void RepeatedEnum::GenerateSerializeWithCachedSizesToArray(
   }
   p->Emit(R"cc(
     for (int i = 0, n = this->_internal_$name$_size(); i < n; ++i) {
-      std::cout << "PRINT WriteEnumToArray [rep-" << i << "] $full_name$.$name$ " << ::_pbi::WireFormatLite::EnumSize(this->_internal_$name$().Get(i)) << "\n";
+      std::cout << "PRINT WriteEnumToArray [rep-" << i << "] $full_name$.$name$ " << sizeof(this->_internal_$name$().Get(i)) << "\n";
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           $number$, static_cast<$Enum$>(this->_internal_$name$().Get(i)),
