@@ -1,3 +1,3 @@
-Implementation gather with memcpy + compression with IAA, on our toy microbenchmark with nested varints
-Scatter to be implemented soon
-Not tested for correctness yet, since scatter is not implemented, but should be fine
+Implementation scatter-gather with memcpy + de/compression with IAA, on our toy microbenchmark with nested varints
+Correctness verified
+Still some issues to check and will get results

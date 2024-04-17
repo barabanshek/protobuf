@@ -13,7 +13,7 @@
 class ScatterGather {
  public:
   // [<addr, size>]
-  typedef std::vector<std::tuple<const uint8_t*, size_t>> Schema;
+  typedef std::vector<std::tuple<uint8_t*, size_t>> Schema;
 
   int GatherWithMemCpy(const Schema& schema, uint8_t* out, size_t* out_size) {
     size_t out_offset = 0;

@@ -59,6 +59,7 @@ int iaa_fini_jobs() {
 int compress_with_IAA(uint8_t* src, uint32_t srcSize, uint8_t* outBStream, uint32_t outBufferSize, uint32_t* actualOutSize) {
     // Create job for compressing the byte stream
     job->op             = qpl_op_compress;
+    job->level          = qpl_level_1;
     job->level          = qpl_default_level;
     job->next_in_ptr 	= src;
     job->available_in   = srcSize;
@@ -85,6 +86,7 @@ int decompress_with_IAA(uint8_t* src, uint32_t srcSize, uint8_t* outBStream, uin
     job->next_out_ptr   = outBStream;
     job->available_out  = outBufferSize;
     job->flags 			= QPL_FLAG_FIRST | QPL_FLAG_LAST; // | QPL_FLAG_CANNED_MODE;
+    //job->flags 			= QPL_FLAG_NO_HDRS | QPL_FLAG_FIRST | QPL_FLAG_LAST; // | QPL_FLAG_CANNED_MODE;
 
     qpl_status status = qpl_execute_job(job);
     if (status != QPL_STS_OK) {

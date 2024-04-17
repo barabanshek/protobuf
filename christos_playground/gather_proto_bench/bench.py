@@ -19,10 +19,10 @@ benchmark_source_path = "main_src.cc"
 #
 # Run fun.
 #
-W = 2
-D = 3
-START = 2
-N = 2
+W = 1
+D = 1
+START = 1
+N = 1
 STEP = 10
 
 print("Width : ", W)
@@ -46,6 +46,7 @@ for i in range(START, N + 1):
     # Generate setters.
     setters = NestedMessageGenerator.generate_setters(n_fields, D, W)
     schema = NestedMessageGenerator.generate_schema(n_fields, D, W)
+    out_schema = NestedMessageGenerator.generate_out_schema(n_fields, D, W)
     with open(benchmark_tmpl_path, 'r') as f:
             lines = f.readlines()
 
@@ -56,6 +57,10 @@ for i in range(START, N + 1):
     for j, line in enumerate(lines):
         if "<------------ SCHEMA ------>" in line:
             lines.insert(j + 1, schema)
+            break
+    for j, line in enumerate(lines):
+        if "<------------ SCATTER SCHEMA ------>" in line:
+            lines.insert(j + 1, out_schema)
             break
 
     with open(benchmark_source_path, 'w') as f:
