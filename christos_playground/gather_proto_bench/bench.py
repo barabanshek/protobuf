@@ -21,8 +21,8 @@ benchmark_source_path = "main_src.cc"
 #
 W = 1
 D = 1
-START = 1
-N = 1
+START = 10
+N = 10
 STEP = 10
 
 print("Width : ", W)

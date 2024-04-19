@@ -15,8 +15,8 @@ int main () {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa jobs
-	//iaa_init_jobs(qpl_path_hardware);
-	iaa_init_jobs(qpl_path_software);
+	iaa_init_jobs(qpl_path_hardware);
+	//iaa_init_jobs(qpl_path_software);
 
     std::vector<M> messages;
     //messages.reserve(kNofIterations);
@@ -36,16 +36,106 @@ int main () {
         M m;
 
         // <------------ SETTERS ------>
-		(&m)->set_f1(91 + (i * 1) % 8);
-		(&m)->set_f2(5805289 + (i * 1) % 8);
-		(&m)->set_f3(5523360 + (i * 1) % 8);
-		(&m)->set_f4(4241022693 + (i * 1) % 8);
-		(&m)->set_f5(131 + (i * 1) % 8);
-		(&m)->set_f6(2270121011 + (i * 1) % 8);
-		(&m)->set_f7(10529740 + (i * 1) % 8);
-		(&m)->set_f8(845 + (i * 1) % 8);
-		(&m)->set_f9(344 + (i * 1) % 8);
-		(&m)->set_f10(7364075 + (i * 1) % 8);
+		(&m)->set_f1(3417066274 + (i * 1) % 8);
+		(&m)->set_f2(67 + (i * 1) % 8);
+		(&m)->set_f3(3030226933 + (i * 1) % 8);
+		(&m)->set_f4(105 + (i * 1) % 8);
+		(&m)->set_f5(36945 + (i * 1) % 8);
+		(&m)->set_f6(27260 + (i * 1) % 8);
+		(&m)->set_f7(64175 + (i * 1) % 8);
+		(&m)->set_f8(9848367 + (i * 1) % 8);
+		(&m)->set_f9(10869356 + (i * 1) % 8);
+		(&m)->set_f10(56926 + (i * 1) % 8);
+		(&m)->set_f11(16661256 + (i * 1) % 8);
+		(&m)->set_f12(7304043 + (i * 1) % 8);
+		(&m)->set_f13(192 + (i * 1) % 8);
+		(&m)->set_f14(134 + (i * 1) % 8);
+		(&m)->set_f15(136 + (i * 1) % 8);
+		(&m)->set_f16(197 + (i * 1) % 8);
+		(&m)->set_f17(15609599 + (i * 1) % 8);
+		(&m)->set_f18(699036 + (i * 1) % 8);
+		(&m)->set_f19(237 + (i * 1) % 8);
+		(&m)->set_f20(189 + (i * 1) % 8);
+		(&m)->set_f21(242 + (i * 1) % 8);
+		(&m)->set_f22(12174536 + (i * 1) % 8);
+		(&m)->set_f23(32736 + (i * 1) % 8);
+		(&m)->set_f24(49763 + (i * 1) % 8);
+		(&m)->set_f25(244 + (i * 1) % 8);
+		(&m)->set_f26(58135 + (i * 1) % 8);
+		(&m)->set_f27(811378156 + (i * 1) % 8);
+		(&m)->set_f28(10460465 + (i * 1) % 8);
+		(&m)->set_f29(15935855 + (i * 1) % 8);
+		(&m)->set_f30(25684 + (i * 1) % 8);
+		(&m)->set_f31(164 + (i * 1) % 8);
+		(&m)->set_f32(7249002 + (i * 1) % 8);
+		(&m)->set_f33(24456 + (i * 1) % 8);
+		(&m)->set_f34(3926576095 + (i * 1) % 8);
+		(&m)->set_f35(1113743503 + (i * 1) % 8);
+		(&m)->set_f36(7784 + (i * 1) % 8);
+		(&m)->set_f37(2053437655 + (i * 1) % 8);
+		(&m)->set_f38(3370458 + (i * 1) % 8);
+		(&m)->set_f39(2032044830 + (i * 1) % 8);
+		(&m)->set_f40(2572527 + (i * 1) % 8);
+		(&m)->set_f41(107 + (i * 1) % 8);
+		(&m)->set_f42(5053343 + (i * 1) % 8);
+		(&m)->set_f43(3468226711 + (i * 1) % 8);
+		(&m)->set_f44(47785 + (i * 1) % 8);
+		(&m)->set_f45(1226194312 + (i * 1) % 8);
+		(&m)->set_f46(38219 + (i * 1) % 8);
+		(&m)->set_f47(50636 + (i * 1) % 8);
+		(&m)->set_f48(6496171 + (i * 1) % 8);
+		(&m)->set_f49(144 + (i * 1) % 8);
+		(&m)->set_f50(14557 + (i * 1) % 8);
+		(&m)->set_f51(14824 + (i * 1) % 8);
+		(&m)->set_f52(13291871 + (i * 1) % 8);
+		(&m)->set_f53(49032 + (i * 1) % 8);
+		(&m)->set_f54(53548 + (i * 1) % 8);
+		(&m)->set_f55(2053369059 + (i * 1) % 8);
+		(&m)->set_f56(133 + (i * 1) % 8);
+		(&m)->set_f57(703211 + (i * 1) % 8);
+		(&m)->set_f58(12278 + (i * 1) % 8);
+		(&m)->set_f59(5989 + (i * 1) % 8);
+		(&m)->set_f60(5270804 + (i * 1) % 8);
+		(&m)->set_f61(4199982236 + (i * 1) % 8);
+		(&m)->set_f62(8426832 + (i * 1) % 8);
+		(&m)->set_f63(11278109 + (i * 1) % 8);
+		(&m)->set_f64(21 + (i * 1) % 8);
+		(&m)->set_f65(225 + (i * 1) % 8);
+		(&m)->set_f66(4264277 + (i * 1) % 8);
+		(&m)->set_f67(588 + (i * 1) % 8);
+		(&m)->set_f68(51992 + (i * 1) % 8);
+		(&m)->set_f69(62427 + (i * 1) % 8);
+		(&m)->set_f70(1978952550 + (i * 1) % 8);
+		(&m)->set_f71(4024065152 + (i * 1) % 8);
+		(&m)->set_f72(28804 + (i * 1) % 8);
+		(&m)->set_f73(3766717 + (i * 1) % 8);
+		(&m)->set_f74(11367615 + (i * 1) % 8);
+		(&m)->set_f75(190 + (i * 1) % 8);
+		(&m)->set_f76(119938453 + (i * 1) % 8);
+		(&m)->set_f77(34 + (i * 1) % 8);
+		(&m)->set_f78(206 + (i * 1) % 8);
+		(&m)->set_f79(33098 + (i * 1) % 8);
+		(&m)->set_f80(16148738 + (i * 1) % 8);
+		(&m)->set_f81(3859301542 + (i * 1) % 8);
+		(&m)->set_f82(210 + (i * 1) % 8);
+		(&m)->set_f83(3031854268 + (i * 1) % 8);
+		(&m)->set_f84(2232999285 + (i * 1) % 8);
+		(&m)->set_f85(1777847 + (i * 1) % 8);
+		(&m)->set_f86(44268 + (i * 1) % 8);
+		(&m)->set_f87(15423026 + (i * 1) % 8);
+		(&m)->set_f88(181 + (i * 1) % 8);
+		(&m)->set_f89(165 + (i * 1) % 8);
+		(&m)->set_f90(8725532 + (i * 1) % 8);
+		(&m)->set_f91(6408153 + (i * 1) % 8);
+		(&m)->set_f92(26982 + (i * 1) % 8);
+		(&m)->set_f93(8471069 + (i * 1) % 8);
+		(&m)->set_f94(21781 + (i * 1) % 8);
+		(&m)->set_f95(115 + (i * 1) % 8);
+		(&m)->set_f96(55746 + (i * 1) % 8);
+		(&m)->set_f97(485344205 + (i * 1) % 8);
+		(&m)->set_f98(5330 + (i * 1) % 8);
+		(&m)->set_f99(23115 + (i * 1) % 8);
+		(&m)->set_f100(12160 + (i * 1) % 8);
 
         //messages[i] = m;
         messages.push_back(m);
@@ -68,27 +158,47 @@ int main () {
     //
     // Warm-up.
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-    if (!messages[i].SerializeToString(&ser_outs[i])) {
-        std::cerr << "Benchmark error." << std::endl;
-        return -1;
-    }
+        if (!messages[i].SerializeToString(&ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
     }
 
-    std::chrono::steady_clock::time_point begin =
-        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-    if (!messages[i].SerializeToString(&ser_outs[i])) {
-        std::cerr << "Benchmark error." << std::endl;
-        return -1;
-    }
+        if (!messages[i].SerializeToString(&ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto took_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Serialization took = "
-            << took_ns / (kNofIterations - kNofWarmUpIterations)
-            << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
+    auto took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Serialization took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
 
+    //
+    // Benchmark deserialize.
+    //
+    std::vector<M> deser_messages_out;
+    for (size_t i = 0; i < messages.size(); ++i) deser_messages_out.push_back(M());
+
+    // Warm-up.
+    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
+        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
+    }
+
+    begin = std::chrono::steady_clock::now();
+    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
+        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
+    }
+    end = std::chrono::steady_clock::now();
+    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Deserialization took = " << took_ns / (messages.size() - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
 
     // GATHER + COMPRESSION
 
@@ -210,6 +320,8 @@ int main () {
 
     std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;
 
+    /*
+    */
     // Optional:  Delete all global objects allocated by libprotobuf.
     //google::protobuf::ShutdownProtobufLibrary();
 

@@ -15,8 +15,8 @@ int main () {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa jobs
-	//iaa_init_jobs(qpl_path_hardware);
-	iaa_init_jobs(qpl_path_software);
+	iaa_init_jobs(qpl_path_hardware);
+	//iaa_init_jobs(qpl_path_software);
 
     std::vector<M> messages;
     //messages.reserve(kNofIterations);
@@ -57,27 +57,47 @@ int main () {
     //
     // Warm-up.
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-    if (!messages[i].SerializeToString(&ser_outs[i])) {
-        std::cerr << "Benchmark error." << std::endl;
-        return -1;
-    }
+        if (!messages[i].SerializeToString(&ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
     }
 
-    std::chrono::steady_clock::time_point begin =
-        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-    if (!messages[i].SerializeToString(&ser_outs[i])) {
-        std::cerr << "Benchmark error." << std::endl;
-        return -1;
-    }
+        if (!messages[i].SerializeToString(&ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto took_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Serialization took = "
-            << took_ns / (kNofIterations - kNofWarmUpIterations)
-            << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
+    auto took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Serialization took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
 
+    //
+    // Benchmark deserialize.
+    //
+    std::vector<M> deser_messages_out;
+    for (size_t i = 0; i < messages.size(); ++i) deser_messages_out.push_back(M());
+
+    // Warm-up.
+    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
+        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
+    }
+
+    begin = std::chrono::steady_clock::now();
+    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
+        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
+    }
+    end = std::chrono::steady_clock::now();
+    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Deserialization took = " << took_ns / (messages.size() - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
 
     // GATHER + COMPRESSION
 
@@ -198,6 +218,8 @@ int main () {
 
     std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;
 
+    /*
+    */
     // Optional:  Delete all global objects allocated by libprotobuf.
     //google::protobuf::ShutdownProtobufLibrary();
 
