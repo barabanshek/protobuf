@@ -19,10 +19,10 @@ benchmark_source_path = "main_src.cc"
 #
 # Run fun.
 #
-W = 1
-D = 1
-START = 10
-N = 10
+W = 2
+D = 4
+START = 2
+N = 2
 STEP = 10
 
 print("Width : ", W)
@@ -73,9 +73,8 @@ for i in range(START, N + 1):
 
     # Run benchmark
     res = subprocess.run(f'sudo ./test', cwd='build', shell=True, text=True, capture_output=True)
+    result = res.stdout
+    print(f'iteration #{i}: {n_fields} int32 fields')
+    print(result)
     if res.returncode != 0:
-        print("Failed to run benchmark: ", res.stderr)
-    else:
-        result = res.stdout
-        print(f'iteration #{i}: {n_fields} int32 fields')
-        print(result)
+        print("Problem running benchmark: ", res.stderr)

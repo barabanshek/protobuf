@@ -7,7 +7,7 @@
 static constexpr size_t kNofIterations = 10000;
 static constexpr size_t kNofWarmUpIterations = 100;
 
-#define BUFFER_SIZE 16384
+#define BUFFER_SIZE 4096
 
 int main () {
     // Verify that the version of the library that we linked against is
@@ -117,6 +117,17 @@ int main () {
         }
     }
 
+    // warmup the output buffers
+    /*
+    long long make_it_hot = 0;
+    for (size_t i = 0; i < kNofIterations; ++i) {
+        for (size_t j = 0; j < BUFFER_SIZE; ++j) {
+            make_it_hot += compressed[i][j];
+        }
+    }
+    assert(make_it_hot != 0);
+    */
+
     // gather
     begin = std::chrono::steady_clock::now();
     for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
@@ -124,6 +135,7 @@ int main () {
             std::cerr << "Failed to gather" << std::endl;
             return -1;
         }
+    /*
     }
     end = std::chrono::steady_clock::now();
     took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
@@ -132,6 +144,7 @@ int main () {
     // compress
     begin = std::chrono::steady_clock::now();
     for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
+    */
         if (compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i])) {
             std::cerr << "Benchmark error." << std::endl;
             return -1;
@@ -139,32 +152,12 @@ int main () {
     }
     end = std::chrono::steady_clock::now();
     took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Compressing took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds" << std::endl;
+    std::cout << "Gather+Compressing took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds" << std::endl;
 
     std::cout << "Gathered size : " << out_size << " bytes" << std::endl;
     std::cout << "Compressed size : " << comprOutputSize[0] << " bytes" << std::endl;
 
     // DECOMPRESSION + SCATTER
-
-    // decompress
-    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-    }
-
-    begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-    }
-    end = std::chrono::steady_clock::now();
-    took_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Decompression took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << decomprOutputSize[0] << " Bytes" << std::endl;
 
     // create scatter schemas and output messages
     // output messages after decompression and scatter
@@ -185,28 +178,33 @@ int main () {
         scatter_schemas.push_back(schema);
     }
 
-    // warmup scatter
+    // warmup decompress+scatter
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
+        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
         if (scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i])) {
             std::cout << "Failed to scatter" << std::endl;
             return -1;
         }
     }
 
-    // do scatter
     begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
+    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
+        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
+            std::cerr << "Benchmark error." << std::endl;
+            return -1;
+        }
         if (scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i])) {
             std::cout << "Failed to scatter" << std::endl;
             return -1;
         }
     }
     end = std::chrono::steady_clock::now();
-    took_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Scatter took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds" << std::endl;
+    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Decompression+Scatter took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << decomprOutputSize[0] << " Bytes" << std::endl;
 
-    // TODO
     // Verify correctness
     /*
     */
