@@ -97,7 +97,7 @@ int main () {
     }
     end = std::chrono::steady_clock::now();
     took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Deserialization took = " << took_ns / (messages.size() - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
+    std::cout << "Deserialization took = " << took_ns / (messages.size() - kNofWarmUpIterations) << " [ns]" << std::endl;
 
     // GATHER + COMPRESSION
 
@@ -116,17 +116,6 @@ int main () {
             return -1;
         }
     }
-
-    // warmup the output buffers
-    /*
-    long long make_it_hot = 0;
-    for (size_t i = 0; i < kNofIterations; ++i) {
-        for (size_t j = 0; j < BUFFER_SIZE; ++j) {
-            make_it_hot += compressed[i][j];
-        }
-    }
-    assert(make_it_hot != 0);
-    */
 
     // gather
     begin = std::chrono::steady_clock::now();
@@ -152,9 +141,9 @@ int main () {
     }
     end = std::chrono::steady_clock::now();
     took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Gather+Compressing took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds" << std::endl;
+    std::cout << "Gather+Compressing took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds, ";
 
-    std::cout << "Gathered size : " << out_size << " bytes" << std::endl;
+    std::cout << "Gathered size : " << out_size << " bytes, ";
     std::cout << "Compressed size : " << comprOutputSize[0] << " bytes" << std::endl;
 
     // DECOMPRESSION + SCATTER
