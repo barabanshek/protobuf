@@ -43,13 +43,13 @@ int main () {
     }
 
     // Gather schemas
-    std::vector<ScatterGather::Schema> schemas;
+    std::vector<ScatterGather::Schema> gather_schemas;
     for (size_t i = 0; i < kNofIterations; ++i) {
-        ScatterGather::Schema schema;
+        ScatterGather::Schema gather_schema;
 
-        // <------------ SCHEMA ------>
+        // <------------ GATHER SCHEMA ------>
 
-        schemas.push_back(schema);
+        gather_schemas.push_back(gather_schema);
     }
 
     //
@@ -107,7 +107,7 @@ int main () {
 
     // warmup for both
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (scagatherer.GatherWithMemCpy(schemas[i], gather_outs[i].data(), &out_size) ) {
+        if (scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size) ) {
             std::cerr << "Failed to gather" << std::endl;
             return -1;
         }
@@ -120,7 +120,7 @@ int main () {
     // gather
     begin = std::chrono::steady_clock::now();
     for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
-        if (scagatherer.GatherWithMemCpy(schemas[i], gather_outs[i].data(), &out_size) ) {
+        if (scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size) ) {
             std::cerr << "Failed to gather" << std::endl;
             return -1;
         }
@@ -160,11 +160,11 @@ int main () {
     }
 
     for (size_t i = 0; i < kNofIterations; ++i) {
-        ScatterGather::Schema schema;
+        ScatterGather::Schema scatter_schema;
 
         // <------------ SCATTER SCHEMA ------>
 
-        scatter_schemas.push_back(schema);
+        scatter_schemas.push_back(scatter_schema);
     }
 
     // warmup decompress+scatter
