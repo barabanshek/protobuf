@@ -12,7 +12,7 @@ from proto_generator import *
 #
 
 # Env.
-protobuf_path = "/home/christos/protobuf"
+protobuf_path = "/data/sanchez/users/shab/iaa/nikita/protobuf/"
 benchmark_tmpl_path = "main.cc"
 benchmark_source_path = "main_src.cc"
 
@@ -58,7 +58,7 @@ for i in range(1, N + 1):
         print("Failed to build benchmark: ", res.stderr)
 
     # Run benchmark
-    res = subprocess.run(f'sudo ./fun', cwd='build', shell=True, text=True, capture_output=True)
+    res = subprocess.run(f'./fun', cwd='build', shell=True, text=True, capture_output=True)
     if res.returncode != 0:
         print("Failed to run benchmark: ", res.stderr)
     else:
