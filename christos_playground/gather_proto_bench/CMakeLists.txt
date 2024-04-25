@@ -21,13 +21,13 @@ link_directories($ENV{PROTO_PATH}/third_party/utf8_range)
 link_directories($ENV{PROTO_PATH}/third_party/abseil-cpp)
 
 # add qpl link directory
-link_directories(/home/christos/qpl_install_dir/lib)
+link_directories(/data/sanchez/users/shab/iaa/qpl-install/lib)
 
 include_directories(exp/stubs)
 include_directories(exp/stubs/exp)
 
 # add qpl include directory
-include_directories(/home/christos/qpl_install_dir/include)
+include_directories(/data/sanchez/users/shab/iaa/qpl-install/include/)
 
 set(protobuf_ABSL_USED_TARGETS
     absl::absl_check

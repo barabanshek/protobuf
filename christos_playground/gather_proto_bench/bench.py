@@ -12,7 +12,7 @@ from proto_generator import *
 #
 
 # Env.
-protobuf_path = "/home/christos/protobuf"
+protobuf_path = "/data/sanchez/users/shab/iaa/nikita/protobuf/"
 benchmark_tmpl_path = "main.cc"
 benchmark_source_path = "main_src.cc"
 
