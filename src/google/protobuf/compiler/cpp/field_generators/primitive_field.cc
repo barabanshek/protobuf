@@ -158,6 +158,7 @@ class SingularPrimitive final : public FieldGeneratorBase {
     )cc");
   }
 
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -167,6 +168,7 @@ class SingularPrimitive final : public FieldGeneratorBase {
   const Options* opts_;
 };
 
+void SingularPrimitive::GenerateDSASchemaCall(io::Printer* p) const {}
 void SingularPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
       AnnotatedAccessors(field_, {"", "_internal_", "_internal_set_"}));
@@ -398,6 +400,7 @@ class RepeatedPrimitive final : public FieldGeneratorBase {
   }
 
   void GeneratePrivateMembers(io::Printer* p) const override;
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -441,6 +444,8 @@ void RepeatedPrimitive::GeneratePrivateMembers(io::Printer* p) const {
             )cc");
   }
 }
+
+void RepeatedPrimitive::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void RepeatedPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(

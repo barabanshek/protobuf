@@ -138,12 +138,15 @@ class SingularEnum : public FieldGeneratorBase {
     )cc");
   }
 
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
 
  private:
   const Options* opts_;
 };
+
+void SingularEnum::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void SingularEnum::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
@@ -361,6 +364,7 @@ class RepeatedEnum : public FieldGeneratorBase {
 
   void GenerateConstructorCode(io::Printer* p) const override {}
 
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -370,6 +374,8 @@ class RepeatedEnum : public FieldGeneratorBase {
   const Options* opts_;
   bool has_cached_size_;
 };
+
+void RepeatedEnum::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void RepeatedEnum::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(

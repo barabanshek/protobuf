@@ -624,6 +624,21 @@ void MessageGenerator::AddGenerators(
   }
 }
 
+void MessageGenerator::GenerateDSASchema(io::Printer* p) {
+    p->Emit({{"internal_schemas",
+              [&] {
+                for (auto field : FieldRange(descriptor_)) {
+                    field_generators_.get(field).GenerateDSASchemaCall(p);
+                }
+              }}},
+            R"cc(
+            void generate_schema(std::vector<std::tuple<uint8_t*, size_t>> &schema) {
+                schema.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(this), sizeof(*(this))));
+                $internal_schemas$;
+            }
+            )cc");
+}
+
 void MessageGenerator::GenerateFieldAccessorDeclarations(io::Printer* p) {
   auto v = p->WithVars(MessageVars(descriptor_));
 
@@ -1843,6 +1858,11 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
             enum_generators_[i]->GenerateSymbolImports(p);
           }
         }},
+       {"schemas",
+        [&] {
+          // Generate accessor methods for all fields.
+          GenerateDSASchema(p);
+        }},
        {"decl_field_accessors",
         [&] {
           // Generate accessor methods for all fields.
@@ -2013,6 +2033,9 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
           // nested types ----------------------------------------------------
           $nested_types$;
           $nested_enums$;
+
+          // schemas for IAA/DSA ---------------------------------------------
+          $schemas$;
 
           // accessors -------------------------------------------------------
           $decl_field_accessors$;

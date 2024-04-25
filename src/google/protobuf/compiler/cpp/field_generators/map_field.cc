@@ -161,6 +161,7 @@ class Map : public FieldGeneratorBase {
   }
 
   void GeneratePrivateMembers(io::Printer* p) const override;
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -193,6 +194,8 @@ void Map::GeneratePrivateMembers(io::Printer* p) const {
             )cc");
   }
 }
+
+void Map::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void Map::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v1 = p->WithVars(

@@ -118,6 +118,8 @@ class FieldGeneratorBase {
 
   virtual void GenerateStaticMembers(io::Printer* p) const {}
 
+  virtual void GenerateDSASchemaCall(io::Printer* p) const = 0;
+
   virtual void GenerateAccessorDeclarations(io::Printer* p) const = 0;
 
   virtual void GenerateInlineAccessorDefinitions(io::Printer* p) const = 0;
@@ -305,6 +307,11 @@ class FieldGenerator {
   void GenerateMemberConstexprConstructor(io::Printer* p) const {
     auto vars = PushVarsForCall(p);
     impl_->GenerateMemberConstexprConstructor(p);
+  }
+
+  void GenerateDSASchemaCall(io::Printer* p) const {
+    auto vars = PushVarsForCall(p);
+    impl_->GenerateDSASchemaCall(p);
   }
 
   // Generates declarations for all of the accessor functions related to this

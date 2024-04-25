@@ -184,6 +184,7 @@ class SingularString : public FieldGeneratorBase {
   }
 
   void GenerateStaticMembers(io::Printer* p) const override;
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -217,6 +218,8 @@ void SingularString::GenerateStaticMembers(io::Printer* p) const {
     )cc");
   }
 }
+
+void SingularString::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void SingularString::GenerateAccessorDeclarations(io::Printer* p) const {
   // If we're using SingularString for a field with a ctype, it's
@@ -813,6 +816,7 @@ class RepeatedString : public FieldGeneratorBase {
     )cc");
   }
 
+  void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -820,6 +824,8 @@ class RepeatedString : public FieldGeneratorBase {
  private:
   const Options* opts_;
 };
+
+void RepeatedString::GenerateDSASchemaCall(io::Printer* p) const {}
 
 void RepeatedString::GenerateAccessorDeclarations(io::Printer* p) const {
   bool unknown_ctype =

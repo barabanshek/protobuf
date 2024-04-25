@@ -87,6 +87,9 @@ class MessageGenerator {
   using GeneratorFunction = FieldGeneratorBase::GeneratorFunction;
   enum class InitType { kConstexpr, kArena, kArenaCopy };
 
+  // for IAA/DSA
+  void GenerateDSASchema(io::Printer* p);
+
   // Generate declarations and definitions of accessors for fields.
   void GenerateFieldAccessorDeclarations(io::Printer* p);
   void GenerateFieldAccessorDefinitions(io::Printer* p);
