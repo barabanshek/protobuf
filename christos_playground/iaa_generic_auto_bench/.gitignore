@@ -1,2 +1,4 @@
 build/
 exp/
+main_src.cc
+*.pdf
