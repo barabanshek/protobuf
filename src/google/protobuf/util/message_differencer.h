@@ -996,6 +996,7 @@ class PROTOBUF_EXPORT FieldContext {
   std::vector<MessageDifferencer::SpecificField>* parent_fields_;
 };
 
+
 }  // namespace util
 }  // namespace protobuf
 }  // namespace google

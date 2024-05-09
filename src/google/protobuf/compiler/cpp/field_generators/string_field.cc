@@ -219,7 +219,25 @@ void SingularString::GenerateStaticMembers(io::Printer* p) const {
   }
 }
 
-void SingularString::GenerateDSASchemaCall(io::Printer* p) const {}
+void SingularString::GenerateDSASchemaCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+        schema.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(mutable_$name$()), mutable_$name$()->size()));
+      )cc");
+
+}
 
 void SingularString::GenerateAccessorDeclarations(io::Printer* p) const {
   // If we're using SingularString for a field with a ctype, it's

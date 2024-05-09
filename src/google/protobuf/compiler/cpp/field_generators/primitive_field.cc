@@ -169,6 +169,7 @@ class SingularPrimitive final : public FieldGeneratorBase {
 };
 
 void SingularPrimitive::GenerateDSASchemaCall(io::Printer* p) const {}
+
 void SingularPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
       AnnotatedAccessors(field_, {"", "_internal_", "_internal_set_"}));

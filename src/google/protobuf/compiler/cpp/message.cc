@@ -625,16 +625,44 @@ void MessageGenerator::AddGenerators(
 }
 
 void MessageGenerator::GenerateDSASchema(io::Printer* p) {
-    p->Emit({{"internal_schemas",
+    p->Emit({{"non_pointer_schema",
               [&] {
-                for (auto field : FieldRange(descriptor_)) {
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    schema.push_back(std::make_tuple(start_addr, end_addr - start_addr + sizeof($last$())));
+                )cc");
+               }
+               }
+            },
+            {"recursive_schemas",
+              [&] {
+                for (auto field : optimized_order_) {
                     field_generators_.get(field).GenerateDSASchemaCall(p);
                 }
               }}},
             R"cc(
             void generate_schema(std::vector<std::tuple<uint8_t*, size_t>> &schema) {
-                schema.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(this), sizeof(*(this))));
-                $internal_schemas$;
+                $non_pointer_schema$;
+                $recursive_schemas$;
             }
             )cc");
 }
