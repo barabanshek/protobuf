@@ -667,6 +667,49 @@ void MessageGenerator::GenerateDSASchema(io::Printer* p) {
             )cc");
 }
 
+void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
+    p->Emit({{"non_pointer_sizes",
+              [&] {
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    sizes.push_back(end_addr - start_addr + sizeof($last$()));
+                )cc");
+               }
+               }
+            },
+            {"recursive_sizes",
+              [&] {
+                for (auto field : optimized_order_) {
+                    field_generators_.get(field).GenerateScatterSizesCall(p);
+                }
+              }}},
+            R"cc(
+            void generate_scatter_sizes(std::vector<size_t> &sizes) {
+                $non_pointer_sizes$;
+                $recursive_sizes$;
+            }
+            )cc");
+}
+
 void MessageGenerator::GenerateFieldAccessorDeclarations(io::Printer* p) {
   auto v = p->WithVars(MessageVars(descriptor_));
 
@@ -1888,8 +1931,11 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
         }},
        {"schemas",
         [&] {
-          // Generate accessor methods for all fields.
           GenerateDSASchema(p);
+        }},
+       {"sizes_for_scatter",
+        [&] {
+          GenerateScatterSizes(p);
         }},
        {"decl_field_accessors",
         [&] {
@@ -2064,6 +2110,7 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
 
           // schemas for IAA/DSA ---------------------------------------------
           $schemas$;
+          $sizes_for_scatter$;
 
           // accessors -------------------------------------------------------
           $decl_field_accessors$;

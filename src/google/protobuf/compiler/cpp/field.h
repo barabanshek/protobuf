@@ -120,6 +120,8 @@ class FieldGeneratorBase {
 
   virtual void GenerateDSASchemaCall(io::Printer* p) const = 0;
 
+  virtual void GenerateScatterSizesCall(io::Printer* p) const {}
+
   virtual void GenerateAccessorDeclarations(io::Printer* p) const = 0;
 
   virtual void GenerateInlineAccessorDefinitions(io::Printer* p) const = 0;
@@ -312,6 +314,11 @@ class FieldGenerator {
   void GenerateDSASchemaCall(io::Printer* p) const {
     auto vars = PushVarsForCall(p);
     impl_->GenerateDSASchemaCall(p);
+  }
+
+  void GenerateScatterSizesCall(io::Printer* p) const {
+    auto vars = PushVarsForCall(p);
+    impl_->GenerateScatterSizesCall(p);
   }
 
   // Generates declarations for all of the accessor functions related to this

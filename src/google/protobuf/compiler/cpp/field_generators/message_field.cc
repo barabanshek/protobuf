@@ -104,6 +104,7 @@ class SingularMessage : public FieldGeneratorBase {
   void GenerateNonInlineAccessorDefinitions(io::Printer* p) const override {}
 
   void GenerateDSASchemaCall(io::Printer* p) const override;
+  void GenerateScatterSizesCall(io::Printer* p) const override;
 
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
@@ -163,6 +164,23 @@ void SingularMessage::GenerateDSASchemaCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
   $mutable_name$()->generate_schema(schema);
+  )cc");
+}
+
+void SingularMessage::GenerateScatterSizesCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+  $mutable_name$()->generate_scatter_sizes(sizes);
   )cc");
 }
 

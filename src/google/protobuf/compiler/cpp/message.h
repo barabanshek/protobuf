@@ -89,6 +89,7 @@ class MessageGenerator {
 
   // for IAA/DSA
   void GenerateDSASchema(io::Printer* p);
+  void GenerateScatterSizes(io::Printer* p);
 
   // Generate declarations and definitions of accessors for fields.
   void GenerateFieldAccessorDeclarations(io::Printer* p);
