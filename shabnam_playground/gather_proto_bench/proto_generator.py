@@ -1,13 +1,18 @@
 import random
+import string
 
 # Generate an arbitrary .proto structure.
 class NestedMessageGenerator:
     @staticmethod
-    def generate_message(num_lines, nestness_depth, nestness_width):
+    def generate_message(num_lines, nestness_depth, nestness_width, has_string=False):
         def gen(ctx, level):
             # Content
             for i in range(num_lines):
                 ctx += "  " * level + f'optional int32 f{i+1} = {i+1};\n'
+            if has_string:
+                for i in range(num_lines):
+                    ctx += "  " * level + f'optional string f{i+1+num_lines} = {i+1+num_lines};\n'
+
 
             # Exit
             if level == nestness_depth:
@@ -18,7 +23,10 @@ class NestedMessageGenerator:
                 ctx += "  " * level + f'message M{level}{i}' + ' {\n'
                 ctx = gen(ctx, level + 1)
                 ctx += "  " * level + '}\n'
-                ctx += "  " * level + f'optional M{level}{i} f{num_lines + 1 + i} = {num_lines + 1 + i};\n'
+                if has_string:
+                    ctx += "  " * level + f'optional M{level}{i} f{2*num_lines + 1 + i} = {2*num_lines + 1 + i};\n'
+                else:
+                    ctx += "  " * level + f'optional M{level}{i} f{num_lines + 1 + i} = {num_lines + 1 + i};\n'
             return ctx
 
         message_content = 'syntax = "proto3";\n'
@@ -29,7 +37,7 @@ class NestedMessageGenerator:
         return message_content
 
     @staticmethod
-    def generate_setters(num_lines, nestness_depth, nestness_width):
+    def generate_setters(num_lines, nestness_depth, nestness_width, has_string=False):
         def rnd():
             val = 0
             for j in range(random.randint(1, 4)):
@@ -40,12 +48,20 @@ class NestedMessageGenerator:
             # Setter
             for i in range(num_lines):
                 ctx += f'\t\t{msg_name}->set_f{i+1}({rnd()} + (i * {level}) % 8);\n'
+            if has_string:
+                for i in range(num_lines):
+                    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
+                    ctx += f'\t\t{msg_name}->set_f{num_lines+i+1}(\"{random_string}\");\n'
+
 
             # DFS
             if level == nestness_depth:
                 return ctx
             for i in range(nestness_width):
-                ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 1 + i}()')
+                if has_string:
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{2*num_lines + 1 + i}()')
+                else:
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 1 + i}()')
             return ctx
 
         return gen("", 1, '(&m)')

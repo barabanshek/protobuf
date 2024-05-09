@@ -23,6 +23,7 @@ parser.add_argument("-p", "--proto", action="store_true", help="Build with proto
 parser.add_argument("-ha", "--hacky", action="store_true", help="Generate setters/getters/schemas with hacky script")
 parser.add_argument("-b", "--build", action="store_true", help="Build protoc output with make")
 parser.add_argument("-r", "--run", action="store_true", help="Run tests")
+parser.add_argument("-s", "--string", action="store_true", help="Include strings in .proto")
 args = parser.parse_args()
 
 #
@@ -45,7 +46,7 @@ for i in range(START, N + 1):
     if args.proto:
         # Generate .proto
         with open(f'exp/person.proto', 'w') as f:
-            f.write(NestedMessageGenerator.generate_message(n_fields, D, W))
+            f.write(NestedMessageGenerator.generate_message(n_fields, D, W, args.string))
 
         # Compile proto
         res = subprocess.run(f'{protobuf_path}/protoc exp/person.proto --cpp_out=exp/stubs', shell=True, text=True, capture_output=True)
@@ -56,7 +57,7 @@ for i in range(START, N + 1):
 
     if args.hacky:
         # Generate setters.
-        setters = NestedMessageGenerator.generate_setters(n_fields, D, W)
+        setters = NestedMessageGenerator.generate_setters(n_fields, D, W, args.string)
         gather_schema = NestedMessageGenerator.generate_gather_schema(n_fields, D, W)
         scatter_schema = NestedMessageGenerator.generate_scatter_schema(n_fields, D, W)
         with open(benchmark_tmpl_path, 'r') as f:
@@ -81,7 +82,7 @@ for i in range(START, N + 1):
         print("Finished hacky setter/schema generation")
     else:
         # Generate setters.
-        setters = NestedMessageGenerator.generate_setters(n_fields, D, W)
+        setters = NestedMessageGenerator.generate_setters(n_fields, D, W, args.string)
         with open(benchmark_tmpl_path, 'r') as f:
                 lines = f.readlines()
 
