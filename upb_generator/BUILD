@@ -289,7 +289,7 @@ bootstrap_cc_library(
 proto_lang_toolchain(
     name = "protoc-gen-upb_toolchain",
     command_line = "--upb_out=$(OUT)",
-    output_files = "multiple",
+    #output_files = "multiple",
     plugin = ":protoc-gen-upb_stage1",
     plugin_format_flag = "--plugin=protoc-gen-upb=%s",
     progress_message = "Generating upb protos",
@@ -359,7 +359,7 @@ bootstrap_cc_library(
 proto_lang_toolchain(
     name = "protoc-gen-upb_minitable_toolchain",
     command_line = "--upb_minitable_out=$(OUT)",
-    output_files = "multiple",
+    #output_files = "multiple",
     plugin = ":protoc-gen-upb_minitable_stage1",
     plugin_format_flag = "--plugin=protoc-gen-upb_minitable=%s",
     progress_message = "Generating upb minitables",
@@ -402,7 +402,7 @@ cc_library(
 proto_lang_toolchain(
     name = "protoc-gen-upbdefs_toolchain",
     command_line = "--upbdefs_out=$(OUT)",
-    output_files = "multiple",
+    #output_files = "multiple",
     plugin = ":protoc-gen-upbdefs",
     plugin_format_flag = "--plugin=protoc-gen-upbdefs=%s",
     progress_message = "Generating upb protos",
