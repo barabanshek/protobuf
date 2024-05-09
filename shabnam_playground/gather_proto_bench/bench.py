@@ -91,11 +91,11 @@ for i in range(START, N + 1):
                 break
         for j, line in enumerate(lines):
             if "<------------ GATHER SCHEMA ------>" in line:
-                lines.insert(j + 1, "messages[i].generate_schema(gather_schema);")
+                lines.insert(j + 1, "\tmessages[i].generate_schema(gather_schema);\n")
                 break
         for j, line in enumerate(lines):
             if "<------------ SCATTER SCHEMA ------>" in line:
-                lines.insert(j + 1, "out_messages[i].generate_schema(scatter_schema);")
+                lines.insert(j + 1, "\tout_messages[i].generate_schema(scatter_schema);\n")
                 break
 
         with open(benchmark_source_path, 'w') as f:
@@ -115,7 +115,7 @@ for i in range(START, N + 1):
 
     if args.run:
         # Run benchmark
-        res = subprocess.run(f'sudo ./test', cwd='build', shell=True, text=True, capture_output=True)
+        res = subprocess.run(f'./test', cwd='build', shell=True, text=True, capture_output=True)
         result = res.stdout
         print(f'iteration #{i}: {n_fields} int32 fields')
         print(result)
