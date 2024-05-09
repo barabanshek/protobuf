@@ -36,6 +36,10 @@ int main () {
         M m;
 
         // <------------ SETTERS ------>
+		(&m)->set_f1(10956065 + (i * 1) % 8);
+		(&m)->set_f2(128 + (i * 1) % 8);
+		(&m)->set_f3("JRM2Q90FF3");
+		(&m)->set_f4("VBVWLJ31BO");
 
         //messages[i] = m;
         messages.push_back(m);
@@ -50,6 +54,17 @@ int main () {
         std::vector<size_t> sizes;
 
         // <------------ GATHER SCHEMA ------>
+	messages[i].generate_schema(gather_schema);
+    std::cout << "printing gather_schema:\n";
+        std::cout << static_cast<void*>(std::get<0>(gather_schema[0])) << ": ";
+        std::cout << *((int*)std::get<0>(gather_schema[0])) << ", ";
+        std::cout << *((int*)(std::get<0>(gather_schema[0])+4)) << ", ";
+        std::cout <<  std::get<1>(gather_schema[0]) << "\n";
+        std::cout << static_cast<void*>(std::get<0>(gather_schema[1])) << " " << std::get<1>(gather_schema[1]) << "\n";
+        std::cout << static_cast<void*>(std::get<0>(gather_schema[2])) << " " << std::get<1>(gather_schema[2]) << "\n";
+        std::cout << "-----------------\n";
+
+    messages[i].generate_scatter_sizes(sizes);
         gather_schemas.push_back(gather_schema);
         sizes_for_scatter.push_back(sizes);
     }
@@ -165,9 +180,18 @@ int main () {
         ScatterGather::Schema scatter_schema;
 
         // <------------ SCATTER SCHEMA ------>
-        scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
+        out_messages[i].set_f3("alskdjfhsalkdjhf");
+	    out_messages[i].generate_scatter_schema(scatter_schema, sizes_for_scatter[i]);
+        //scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
+        std::cout << static_cast<void*>(std::get<0>(scatter_schema[0])) << ": ";
+        std::cout << *(std::get<0>(scatter_schema[0])) << ", ";
+        std::cout <<  std::get<1>(scatter_schema[0]) << "\n";
+        std::cout << static_cast<void*>(std::get<0>(scatter_schema[1])) << " " << std::get<1>(scatter_schema[1]) << "\n";
+        std::cout << static_cast<void*>(std::get<0>(scatter_schema[2])) << " " << std::get<1>(scatter_schema[2]) << "\n";
+        std::cout << "-----------------\n";
         scatter_schemas.push_back(scatter_schema);
     }
+    //exit(1);
 
     // warmup decompress+scatter
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
@@ -203,6 +227,8 @@ int main () {
 
     for (size_t i = 0; i < kNofIterations && all_correct; ++i) {
         all_correct = google::protobuf::util::MessageDifferencer::Equivalent(messages[i], out_messages[i]);
+        std::cout << messages[0].f3() << "  " << out_messages[0].f3() << "\n";
+        std::cout << messages[0].f4() << "  " << out_messages[0].f4() << "\n";
     }
 
     std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;

@@ -30,10 +30,10 @@ args = parser.parse_args()
 # Run fun.
 #
 W = 2
-D = 4
+D = 1
 START = 2
 N = 2
-STEP = 10
+STEP = 1
 
 print("Width : ", W)
 print("Depth : ", D)
@@ -93,6 +93,7 @@ for i in range(START, N + 1):
         for j, line in enumerate(lines):
             if "<------------ GATHER SCHEMA ------>" in line:
                 lines.insert(j + 1, "\tmessages[i].generate_schema(gather_schema);\n")
+                lines.insert(j + 2, "\tmessages[i].generate_scatter_sizes(sizes);\n")
                 break
         for j, line in enumerate(lines):
             if "<------------ SCATTER SCHEMA ------>" in line:

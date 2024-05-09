@@ -10,8 +10,7 @@ class NestedMessageGenerator:
             for i in range(num_lines):
                 ctx += "  " * level + f'optional int32 f{i+1} = {i+1};\n'
             if has_string:
-                for i in range(num_lines):
-                    ctx += "  " * level + f'optional string f{i+1+num_lines} = {i+1+num_lines};\n'
+                ctx += "  " * level + f'optional string f{num_lines+1} = {num_lines+1};\n'
 
 
             # Exit
@@ -24,7 +23,7 @@ class NestedMessageGenerator:
                 ctx = gen(ctx, level + 1)
                 ctx += "  " * level + '}\n'
                 if has_string:
-                    ctx += "  " * level + f'optional M{level}{i} f{2*num_lines + 1 + i} = {2*num_lines + 1 + i};\n'
+                    ctx += "  " * level + f'optional M{level}{i} f{num_lines + 2 + i} = {2*num_lines + 1 + i};\n'
                 else:
                     ctx += "  " * level + f'optional M{level}{i} f{num_lines + 1 + i} = {num_lines + 1 + i};\n'
             return ctx
@@ -49,9 +48,8 @@ class NestedMessageGenerator:
             for i in range(num_lines):
                 ctx += f'\t\t{msg_name}->set_f{i+1}({rnd()} + (i * {level}) % 8);\n'
             if has_string:
-                for i in range(num_lines):
-                    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
-                    ctx += f'\t\t{msg_name}->set_f{num_lines+i+1}(\"{random_string}\");\n'
+                random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
+                ctx += f'\t\t{msg_name}->set_f{num_lines + 1}(\"{random_string}\");\n'
 
 
             # DFS
@@ -59,7 +57,7 @@ class NestedMessageGenerator:
                 return ctx
             for i in range(nestness_width):
                 if has_string:
-                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{2*num_lines + 1 + i}()')
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 2 + i}()')
                 else:
                     ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 1 + i}()')
             return ctx
