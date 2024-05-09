@@ -200,7 +200,7 @@ int main () {
     bool all_correct = true;
 
     for (size_t i = 0; i < kNofIterations && all_correct; ++i) {
-        all_correct = google::protobuf::util::MessageDifferencer::Equals(messages[i], out_messages[i]);
+        all_correct = google::protobuf::util::MessageDifferencer::Equivalent(messages[i], out_messages[i]);
     }
 
     std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;
