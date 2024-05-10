@@ -4,13 +4,14 @@ import string
 # Generate an arbitrary .proto structure.
 class NestedMessageGenerator:
     @staticmethod
-    def generate_message(num_lines, nestness_depth, nestness_width, has_string=False):
+    def generate_message(num_lines, num_strings=1, nestness_depth=1, nestness_width=1, has_string=False):
         def gen(ctx, level):
             # Content
             for i in range(num_lines):
                 ctx += "  " * level + f'optional int32 f{i+1} = {i+1};\n'
             if has_string:
-                ctx += "  " * level + f'optional string f{num_lines+1} = {num_lines+1};\n'
+                for i in range(num_strings):
+                    ctx += "  " * level + f'optional string f{num_lines+i+1} = {num_lines+i+1};\n'
 
 
             # Exit
@@ -23,7 +24,7 @@ class NestedMessageGenerator:
                 ctx = gen(ctx, level + 1)
                 ctx += "  " * level + '}\n'
                 if has_string:
-                    ctx += "  " * level + f'optional M{level}{i} f{num_lines + 2 + i} = {2*num_lines + 1 + i};\n'
+                    ctx += "  " * level + f'optional M{level}{i} f{num_lines + num_strings + 1 + i} = {num_lines + num_strings + 1 + i};\n'
                 else:
                     ctx += "  " * level + f'optional M{level}{i} f{num_lines + 1 + i} = {num_lines + 1 + i};\n'
             return ctx
@@ -36,7 +37,7 @@ class NestedMessageGenerator:
         return message_content
 
     @staticmethod
-    def generate_setters(num_lines, nestness_depth, nestness_width, has_string=False):
+    def generate_setters(num_lines, num_strings=1, nestness_depth=1, nestness_width=1, has_string=False):
         def rnd():
             val = 0
             for j in range(random.randint(1, 4)):
@@ -48,8 +49,13 @@ class NestedMessageGenerator:
             for i in range(num_lines):
                 ctx += f'\t\t{msg_name}->set_f{i+1}({rnd()} + (i * {level}) % 8);\n'
             if has_string:
-                random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
-                ctx += f'\t\t{msg_name}->set_f{num_lines + 1}(\"{random_string}\");\n'
+                for i in range(num_strings):
+                    #if (i % 2 == 0):
+                    #    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
+                    #else:
+                    #    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5)) 
+                    random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)) 
+                    ctx += f'\t\t{msg_name}->set_f{num_lines + i + 1}(\"{random_string}\");\n'
 
 
             # DFS
@@ -57,12 +63,36 @@ class NestedMessageGenerator:
                 return ctx
             for i in range(nestness_width):
                 if has_string:
-                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 2 + i}()')
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + num_strings + 1 + i}()')
                 else:
                     ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 1 + i}()')
             return ctx
 
         return gen("", 1, '(&m)')
+
+    @staticmethod
+    def generate_only_string_setters(num_lines, num_strings=1, nestness_depth=1, nestness_width=1, has_string=False):
+        def gen(ctx, level, msg_name, width_level=0):
+            if has_string:
+                ctx += '\t\t{'
+                ctx += f' // DEPTH = {level}, WIDTH = {width_level}\n'
+                for i in range(num_strings):
+                    #ctx += f'\t\tstd::string dummy_str{i}(\"a\", sizes_for_scatter[i][{i}+1]);\n'
+                    #ctx += f'\t\t{msg_name}->set_f{num_lines + i + 1}(dummy_str{i});\n'
+                    ctx += f'\t\t{msg_name}->set_f{num_lines + i + 1}(dummy_str);\n'
+                ctx += '\t\t}\n'
+
+            # DFS
+            if level == nestness_depth:
+                return ctx
+            for i in range(nestness_width):
+                if has_string:
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + num_strings + 1 + i}()', i)
+                else:
+                    ctx = gen(ctx, level + 1, msg_name + f'->mutable_f{num_lines + 1 + i}()')
+            return ctx
+
+        return gen("", 1, '(&out_messages[i])')
 
     @staticmethod
     def generate_gather_schema(num_lines, nestness_depth, nestness_width):

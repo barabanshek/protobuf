@@ -15,8 +15,8 @@ int main () {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa jobs
-	//iaa_init_jobs(qpl_path_hardware);
-	iaa_init_jobs(qpl_path_software);
+	iaa_init_jobs(qpl_path_hardware);
+	//iaa_init_jobs(qpl_path_software);
 
     std::vector<M> messages;
     //messages.reserve(kNofIterations);
@@ -156,18 +156,38 @@ int main () {
     //out_messages.reserve(kNofIterations);
     // Scatter schemas
     std::vector<ScatterGather::Schema> scatter_schemas;
+
+    size_t num_strings = 0; // below this variable will be set to the correct value by the script
+    // <------------ NUM STRINGS ------>
+    //begin = std::chrono::steady_clock::now();
     for (size_t i = 0; i < kNofIterations; ++i) {
         M m;
         out_messages.push_back(m);
     }
+    //end = std::chrono::steady_clock::now();
+    //took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    //std::cout << "String allocation overhead = " << took_ns / kNofIterations << std::endl;
 
+    begin = std::chrono::steady_clock::now();
+    std::string dummy_str("a", sizes_for_scatter[0][1]);
+    for (size_t i = 0; i < kNofIterations; ++i) {
+        // <------------ STRING SETTERS ------>
+    }
+    end = std::chrono::steady_clock::now();
+    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "String allocation overhead = " << took_ns / kNofIterations << " [ns]" << std::endl;
+
+    begin = std::chrono::steady_clock::now();
     for (size_t i = 0; i < kNofIterations; ++i) {
         ScatterGather::Schema scatter_schema;
 
         // <------------ SCATTER SCHEMA ------>
-        scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
+        //scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
         scatter_schemas.push_back(scatter_schema);
     }
+    end = std::chrono::steady_clock::now();
+    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "Decompression memory allocation overhead = " << took_ns / kNofIterations << " [ns]" << std::endl;
 
     // warmup decompress+scatter
     for (size_t i = 0; i < kNofWarmUpIterations; ++i) {

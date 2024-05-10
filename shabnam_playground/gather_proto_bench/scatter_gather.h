@@ -23,6 +23,7 @@ class ScatterGather {
     }
     *out_size = out_offset;
 
+    /*
     std::cout << "printing contents of gather output buffer:\n";
     std::cout << *((int*)out) << " ";
     std::cout << *((int*)(out+4)) << " ";
@@ -30,6 +31,7 @@ class ScatterGather {
     std::cout << " ";
     for (int i = 0; i < 10; i++) std::cout << out[10+8+i];
     std::cout << "\n------------------\n";
+    */
     return 0;
   }
 
@@ -42,6 +44,7 @@ class ScatterGather {
              std::get<1>(el));
       in_offset += std::get<1>(el);
     }
+    /*
     std::cout << "printing contents of scatter input buffer:\n";
     std::cout << *((int*)in) << " ";
     std::cout << *((int*)(in+4)) << " ";
@@ -49,6 +52,7 @@ class ScatterGather {
     std::cout << " ";
     for (int i = 0; i < 10; i++) std::cout << in[10+8+i];
     std::cout << "\n------------------\n";
+    */
     return 0;
   }
 
