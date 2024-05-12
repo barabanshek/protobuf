@@ -2,3 +2,4 @@ build/
 exp/
 *_src.cc
 *.pdf
+.nvimlog
