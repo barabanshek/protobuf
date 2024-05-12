@@ -5,9 +5,14 @@
 #include"iaa_comp.h"
 
 static constexpr size_t kNofIterations = 2;
-static constexpr size_t kNofWarmUpIterations = 1;
 
 #define BUFFER_SIZE 4096
+
+void report_timings(std::vector<std::chrono::nanoseconds> perfs, std::string stat) {
+    std::cout << stat << "(ns)";
+    for (auto perf: perfs) std::cout << ", " << perf.count();
+    std::cout << "\n";
+}
 
 int main () {
     // Verify that the version of the library that we linked against is
@@ -15,12 +20,21 @@ int main () {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa jobs
-	iaa_init_jobs(qpl_path_hardware);
-	//iaa_init_jobs(qpl_path_software);
+	//iaa_init_jobs(qpl_path_hardware);
+	iaa_init_jobs(qpl_path_software);
 
     std::vector<M> messages;
-    //messages.reserve(kNofIterations);
     std::vector<std::string> ser_outs;
+
+
+    // vectors and time structs for holding performance numbers
+    std::vector<std::chrono::nanoseconds> serialization_durations, deserialization_durations;
+    std::vector<std::chrono::nanoseconds> gather_durations, scatter_durations;
+    std::vector<std::chrono::nanoseconds> compression_durations, decompression_durations;
+    std::vector<std::chrono::nanoseconds> allocation_durations;
+    std::chrono::steady_clock::time_point begin, end;
+    std::chrono::nanoseconds duration;
+
     // IAA utility arrays
     uint8_t** compressed   = new uint8_t*[kNofIterations];
     uint8_t** decompressed = new uint8_t*[kNofIterations];
@@ -28,6 +42,7 @@ int main () {
         compressed[i]   = new uint8_t[BUFFER_SIZE];
         decompressed[i] = new uint8_t[BUFFER_SIZE];
     }
+
     // arrays for keeping output size feedback from IAA
     uint32_t* comprOutputSize   = new uint32_t[kNofIterations];
     uint32_t* decomprOutputSize = new uint32_t[kNofIterations];
@@ -57,24 +72,19 @@ int main () {
     //
     // Benchmark serialize.
     //
-    // Warm-up.
-    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (!messages[i].SerializeToString(&ser_outs[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-    }
+    for (size_t i = 0; i < messages.size(); ++i) {
+        begin = std::chrono::steady_clock::now();
+        auto outcome = messages[i].SerializeToString(&ser_outs[i]);
+        end = std::chrono::steady_clock::now();
 
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-        if (!messages[i].SerializeToString(&ser_outs[i])) {
+        if (!outcome) {
             std::cerr << "Benchmark error." << std::endl;
             return -1;
         }
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        serialization_durations.push_back(duration);
     }
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Serialization took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << ser_outs[0].size() << " Bytes" << std::endl;
 
     //
     // Benchmark deserialize.
@@ -82,102 +92,79 @@ int main () {
     std::vector<M> deser_messages_out;
     for (size_t i = 0; i < messages.size(); ++i) deser_messages_out.push_back(M());
 
-    // Warm-up.
-    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
+    for (size_t i = 0; i < messages.size(); ++i) {
+        begin = std::chrono::steady_clock::now();
+        auto outcome = deser_messages_out[i].ParseFromString(ser_outs[i]);
+        end = std::chrono::steady_clock::now();
+
+        if (!outcome) {
             std::cerr << "Benchmark error." << std::endl;
             return -1;
         }
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        deserialization_durations.push_back(duration);
     }
 
-    begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-        if (!deser_messages_out[i].ParseFromString(ser_outs[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-    }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Deserialization took = " << took_ns / (messages.size() - kNofWarmUpIterations) << " [ns]" << std::endl;
 
     // GATHER + COMPRESSION
-
     ScatterGather scagatherer;
     size_t out_size = 0;
     std::vector<std::vector<uint8_t>> gather_outs(kNofIterations, std::vector<uint8_t>(BUFFER_SIZE, 0));
 
-    // warmup for both
-    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size) ) {
+    // gather + compression
+    for (size_t i = 0; i < kNofIterations; ++i) {
+         begin = std::chrono::steady_clock::now();
+         auto outcome = scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size);
+         end = std::chrono::steady_clock::now();
+
+        if (outcome) {
             std::cerr << "Failed to gather" << std::endl;
             return -1;
         }
-        if (compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i])) {
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        gather_durations.push_back(duration);
+
+        begin = std::chrono::steady_clock::now();
+        outcome = compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+        end = std::chrono::steady_clock::now();
+
+        if (outcome) {
             std::cerr << "Benchmark error." << std::endl;
             return -1;
         }
-    }
 
-    // gather
-    begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
-        if (scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size) ) {
-            std::cerr << "Failed to gather" << std::endl;
-            return -1;
-        }
-    /*
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        compression_durations.push_back(duration);
     }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Gathering took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds" << std::endl;
-
-    // compress
-    begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < kNofIterations; ++i) {
-    */
-        if (compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-    }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Gather+Compressing took : " << took_ns / (kNofIterations - kNofWarmUpIterations) << " nanoseconds, ";
-
-    std::cout << "Gathered size : " << out_size << " bytes, ";
-    std::cout << "Compressed size : " << comprOutputSize[0] << " bytes" << std::endl;
+    // std::cout << "Gathered size : " << out_size << " bytes, ";
+    // std::cout << "Compressed size : " << comprOutputSize[0] << " bytes" << std::endl;
 
     // DECOMPRESSION + SCATTER
 
     // create scatter schemas and output messages
     // output messages after decompression and scatter
     std::vector<M> out_messages;
-    //out_messages.reserve(kNofIterations);
     // Scatter schemas
     std::vector<ScatterGather::Schema> scatter_schemas;
 
-    size_t num_strings = 0; // below this variable will be set to the correct value by the script
-    // <------------ NUM STRINGS ------>
-    //begin = std::chrono::steady_clock::now();
     for (size_t i = 0; i < kNofIterations; ++i) {
         M m;
         out_messages.push_back(m);
     }
-    //end = std::chrono::steady_clock::now();
-    //took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    //std::cout << "String allocation overhead = " << took_ns / kNofIterations << std::endl;
 
     begin = std::chrono::steady_clock::now();
     std::string dummy_str("a", sizes_for_scatter[0][1]);
     for (size_t i = 0; i < kNofIterations; ++i) {
+        begin = std::chrono::steady_clock::now();
         // <------------ STRING SETTERS ------>
-    }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "String allocation overhead = " << took_ns / kNofIterations << " [ns]" << std::endl;
+        end = std::chrono::steady_clock::now();
 
-    begin = std::chrono::steady_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        allocation_durations.push_back(duration);
+    }
+
     for (size_t i = 0; i < kNofIterations; ++i) {
         ScatterGather::Schema scatter_schema;
 
@@ -185,50 +172,50 @@ int main () {
         //scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
         scatter_schemas.push_back(scatter_schema);
     }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Decompression memory allocation overhead = " << took_ns / kNofIterations << " [ns]" << std::endl;
 
-    // warmup decompress+scatter
-    for (size_t i = 0; i < kNofWarmUpIterations; ++i) {
-        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
+    // decompress+scatter
+    for (size_t i = 0; i < messages.size(); ++i) {
+        begin = std::chrono::steady_clock::now();
+        auto outcome = decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i]);
+        end = std::chrono::steady_clock::now();
+
+        if (outcome) {
             std::cerr << "Benchmark error." << std::endl;
             return -1;
         }
-        if (scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i])) {
-            std::cout << "Failed to scatter" << std::endl;
-            return -1;
-        }
-    }
 
-    begin = std::chrono::steady_clock::now();
-    for (size_t i = kNofWarmUpIterations; i < messages.size(); ++i) {
-        if (decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i])) {
-            std::cerr << "Benchmark error." << std::endl;
-            return -1;
-        }
-        if (scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i])) {
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        decompression_durations.push_back(duration);
+
+        begin = std::chrono::steady_clock::now();
+        outcome = scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i]);
+        end = std::chrono::steady_clock::now();
+
+        if (outcome) {
             std::cout << "Failed to scatter" << std::endl;
             return -1;
         }
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        scatter_durations.push_back(duration);
     }
-    end = std::chrono::steady_clock::now();
-    took_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-    std::cout << "Decompression+Scatter took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << decomprOutputSize[0] << " Bytes" << std::endl;
+    //std::cout << "Decompression+Scatter took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << decomprOutputSize[0] << " Bytes" << std::endl;
 
     // Verify correctness
-    /*
-    */
     bool all_correct = true;
-
     for (size_t i = 0; i < kNofIterations && all_correct; ++i) {
         all_correct = google::protobuf::util::MessageDifferencer::Equivalent(messages[i], out_messages[i]);
     }
-
     std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;
 
-    /*
-    */
+    report_timings(serialization_durations, "serialization");
+    report_timings(deserialization_durations, "deserialization");
+    report_timings(gather_durations, "gather");
+    report_timings(compression_durations, "compression");
+    report_timings(scatter_durations, "scatter");
+    report_timings(decompression_durations, "decompression");
+    report_timings(allocation_durations, "allocation");
+
     // Optional:  Delete all global objects allocated by libprotobuf.
     //google::protobuf::ShutdownProtobufLibrary();
 
