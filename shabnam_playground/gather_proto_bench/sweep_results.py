@@ -1,13 +1,16 @@
 import subprocess
 import argparse
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def process_output(res, warmups=1):
     def get_line_mean(line, warmups):
+        print(line)
         nums = [int(_) for _ in line.strip().split(", ")[1:]]
         nums = nums[warmups:]
-        print(nums)
+        if len(nums) == 0:
+            return -1
         return round(sum(nums) / len(nums), 2)
     def get_line_num(line):
         return int(line.strip().split(", ")[-1])
@@ -47,6 +50,8 @@ parser.add_argument('--widths', metavar='N', type=int, nargs='+', default=[1,2,4
 parser.add_argument('--depths', metavar='N', type=int, nargs='+', default=[1])
 parser.add_argument('--ratios', metavar='N', type=int, nargs='+', default=[4])
 parser.add_argument('--sets', metavar='N', type=int, nargs='+', default=[4])
+
+parser.add_argument("-p", "--plot", action="store_true", help="Generate plots")
 args = parser.parse_args()
 
 df = []
@@ -71,3 +76,23 @@ for width in args.widths:
 
 data_frame = pd.DataFrame(df, columns=col_names)
 print(data_frame.to_string())
+
+if args.plot:
+    # Focusing on the columns to stack
+    stack_columns = ["gather_schema", "gather", "compression", "scatter_schema", "decompression", "scatter", "allocation"]
+
+    # Create a stacked bar plot
+    ax = data_frame.set_index("gather_out(bytes)")[stack_columns].plot(kind='bar', stacked=True, figsize=(10, 8))
+
+    # Adding labels and title
+    plt.xlabel("Message size")
+    plt.ylabel("Time Spent")
+    plt.title("Distribution of Time Spent by Operation")
+    plt.legend(title="Operations", loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
+
+    plt.savefig('time_distribution_plot.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
+
+
+
