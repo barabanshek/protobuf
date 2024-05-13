@@ -4,7 +4,7 @@
 #include"scatter_gather.h"
 #include"iaa_comp.h"
 
-static constexpr size_t kNofIterations = 2;
+static constexpr size_t kNofIterations = 11;
 
 #define BUFFER_SIZE 4096
 
@@ -30,6 +30,7 @@ int main () {
     // vectors and time structs for holding performance numbers
     std::vector<std::chrono::nanoseconds> serialization_durations, deserialization_durations;
     std::vector<std::chrono::nanoseconds> gather_durations, scatter_durations;
+    std::vector<std::chrono::nanoseconds> gather_schema_durations, scatter_schema_durations;
     std::vector<std::chrono::nanoseconds> compression_durations, decompression_durations;
     std::vector<std::chrono::nanoseconds> allocation_durations;
     std::chrono::steady_clock::time_point begin, end;
@@ -64,9 +65,14 @@ int main () {
         ScatterGather::Schema gather_schema;
         std::vector<size_t> sizes;
 
+        begin = std::chrono::steady_clock::now();
         // <------------ GATHER SCHEMA ------>
+        end = std::chrono::steady_clock::now();
         gather_schemas.push_back(gather_schema);
         sizes_for_scatter.push_back(sizes);
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        gather_schema_durations.push_back(duration);
     }
 
     //
@@ -168,9 +174,14 @@ int main () {
     for (size_t i = 0; i < kNofIterations; ++i) {
         ScatterGather::Schema scatter_schema;
 
+        begin = std::chrono::steady_clock::now();
         // <------------ SCATTER SCHEMA ------>
         //scagatherer.UpdateScatterSchema(scatter_schema, sizes_for_scatter[i]);
+        end = std::chrono::steady_clock::now();
         scatter_schemas.push_back(scatter_schema);
+
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        scatter_schema_durations.push_back(duration);
     }
 
     // decompress+scatter
@@ -210,8 +221,10 @@ int main () {
 
     report_timings(serialization_durations, "serialization");
     report_timings(deserialization_durations, "deserialization");
+    report_timings(gather_schema_durations, "gather_schemas");
     report_timings(gather_durations, "gather");
     report_timings(compression_durations, "compression");
+    report_timings(scatter_schema_durations, "scatter_schemas");
     report_timings(scatter_durations, "scatter");
     report_timings(decompression_durations, "decompression");
     report_timings(allocation_durations, "allocation");
