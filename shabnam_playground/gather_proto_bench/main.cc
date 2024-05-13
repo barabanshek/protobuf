@@ -144,8 +144,8 @@ int main () {
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         compression_durations.push_back(duration);
     }
-    // std::cout << "Gathered size : " << out_size << " bytes, ";
-    // std::cout << "Compressed size : " << comprOutputSize[0] << " bytes" << std::endl;
+    std::cout << "gather_out(bytes), " << out_size << "\n";
+    std::cout << "compress_out(bytes), " << comprOutputSize[0] << "\n";
 
     // DECOMPRESSION + SCATTER
 
@@ -210,7 +210,7 @@ int main () {
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         scatter_durations.push_back(duration);
     }
-    //std::cout << "Decompression+Scatter took = " << took_ns / (kNofIterations - kNofWarmUpIterations) << " [ns], size = " << decomprOutputSize[0] << " Bytes" << std::endl;
+    std::cout << "decompress_out(bytes), " << decomprOutputSize[0] << "\n";
 
     // Verify correctness
     bool all_correct = true;
