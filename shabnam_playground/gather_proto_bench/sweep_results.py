@@ -8,8 +8,10 @@ def dist_plot(df, name):
     # Focusing on the columns to stack
     stack_columns = ["gather_schema", "gather", "compression", "scatter_schema", "decompression", "scatter", "allocation"]
 
+    df_sorted = df.sort_values(by="gather_out(bytes)")
+
     # Create a stacked bar plot
-    ax = df.set_index("gather_out(bytes)")[stack_columns].plot(kind='bar', stacked=True, figsize=(10, 8))
+    ax = df_sorted.set_index("gather_out(bytes)")[stack_columns].plot(kind='bar', stacked=True, figsize=(10, 8))
 
     # Adding labels and title
     plt.xlabel("Message size")
@@ -46,9 +48,9 @@ def ser_perf_plot(df, name):
             print("---------------")
 
             # Plot each line
-            ax.plot(subset['gather_out(bytes)'], subset['gather_schema_gather_compression'], label='gather_schema+gather+compression', linewidth=2, marker='o')
-            ax.plot(subset['gather_out(bytes)'], subset['gather_compression'], label='gather+compression', linewidth=2, marker='o')
-            ax.plot(subset['gather_out(bytes)'], subset['serialization'], label='serialization', linewidth=2, marker='o')
+            ax.plot(subset['gather_out(bytes)'], subset['gather_schema_gather_compression'], label='gather_schema+gather+compression', linewidth=2, marker='o', color='red')
+            ax.plot(subset['gather_out(bytes)'], subset['gather_compression'], label='gather+compression', linewidth=2, marker='o', color='blue')
+            ax.plot(subset['gather_out(bytes)'], subset['serialization'], label='serialization', linewidth=2, marker='o', color='yellow')
 
             ax.set_title(f'Width {width}, Depth {depth}')
             ax.set_xlabel('gather_out(bytes)')
@@ -93,9 +95,9 @@ def deser_perf_plot(df, name):
             print("---------------")
 
             # Plot each line
-            ax.plot(subset['gather_out(bytes)'], subset['scatter_schema_decompression_scatter'], label='scatter_schema+decompression+scatter', linewidth=2, marker='o')
-            ax.plot(subset['gather_out(bytes)'], subset['decompression_scatter'], label='decompression+scatter', linewidth=2, marker='o')
-            ax.plot(subset['gather_out(bytes)'], subset['deserialization'], label='deserialization', linewidth=2, marker='o')
+            ax.plot(subset['gather_out(bytes)'], subset['scatter_schema_decompression_scatter'], label='scatter_schema+decompression+scatter', linewidth=2, marker='o', color='red')
+            ax.plot(subset['gather_out(bytes)'], subset['decompression_scatter'], label='decompression+scatter', linewidth=2, marker='o', color='blue')
+            ax.plot(subset['gather_out(bytes)'], subset['deserialization'], label='deserialization', linewidth=2, marker='o', color='yellow')
 
             ax.set_title(f'Width {width}, Depth {depth}')
             ax.set_xlabel('gather_out(bytes)')
