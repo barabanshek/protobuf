@@ -402,6 +402,7 @@ class RepeatedPrimitive final : public FieldGeneratorBase {
 
   void GeneratePrivateMembers(io::Printer* p) const override;
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -446,7 +447,29 @@ void RepeatedPrimitive::GeneratePrivateMembers(io::Printer* p) const {
   }
 }
 
-void RepeatedPrimitive::GenerateDSASchemaCall(io::Printer* p) const {}
+void RepeatedPrimitive::GenerateDSASchemaCall(io::Printer* p) const {
+  auto v = p->WithVars(
+      AnnotatedAccessors(field_, {"", "_internal_", "_internal_mutable_"}));
+  auto vs =
+      p->WithVars(AnnotatedAccessors(field_, {"set_", "add_"}, Semantic::kSet));
+  auto va =
+      p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
+  p->Emit(R"cc(
+    schema.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(const_cast<$Type$*>($name$().data())), $name$().size() * sizeof($Type$)));
+  )cc");
+}
+
+void RepeatedPrimitive::GenerateScatterSizesCall(io::Printer* p) const {
+  auto v = p->WithVars(
+      AnnotatedAccessors(field_, {"", "_internal_", "_internal_mutable_"}));
+  auto vs =
+      p->WithVars(AnnotatedAccessors(field_, {"set_", "add_"}, Semantic::kSet));
+  auto va =
+      p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
+  p->Emit(R"cc(
+    sizes.push_back($name$().size() * sizeof($Type$));
+  )cc");
+}
 
 void RepeatedPrimitive::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
