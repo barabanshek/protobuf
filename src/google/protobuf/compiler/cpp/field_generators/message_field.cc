@@ -716,6 +716,7 @@ class RepeatedMessage : public FieldGeneratorBase {
 
   void GeneratePrivateMembers(io::Printer* p) const override;
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -743,7 +744,43 @@ void RepeatedMessage::GeneratePrivateMembers(io::Printer* p) const {
   }
 }
 
-void RepeatedMessage::GenerateDSASchemaCall(io::Printer* p) const {}
+void RepeatedMessage::GenerateDSASchemaCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      mutable_nested_messages(i)->generate_schema(schema);
+    }
+  )cc");
+}
+
+void RepeatedMessage::GenerateScatterSizesCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      mutable_nested_messages(i)->generate_scatter_sizes(sizes);
+    }
+  )cc");
+}
 
 void RepeatedMessage::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
