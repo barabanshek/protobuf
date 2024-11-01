@@ -856,6 +856,7 @@ class RepeatedString : public FieldGeneratorBase {
   }
 
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -864,7 +865,47 @@ class RepeatedString : public FieldGeneratorBase {
   const Options* opts_;
 };
 
-void RepeatedString::GenerateDSASchemaCall(io::Printer* p) const {}
+void RepeatedString::GenerateDSASchemaCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      schema.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).data())), $name$(i).size()));
+    }
+  )cc");
+}
+
+void RepeatedString::GenerateScatterSizesCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      sizes.push_back($name$(i).size());
+    }
+  )cc");
+}
 
 void RepeatedString::GenerateAccessorDeclarations(io::Printer* p) const {
   bool unknown_ctype =
