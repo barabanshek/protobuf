@@ -7,7 +7,7 @@ CMAKE_BUILD_DIR = build
 EXECUTABLE = test
 
 # Default target
-all: run run_ri run_rs run_rm
+all: run run_ri run_rs run_rm run_rr
 
 # Generate C++ code from .proto file
 proto: $(PROTO_GEN_DIR)/test.pb.cc
@@ -29,19 +29,28 @@ build: $(CMAKE_BUILD_DIR)/Makefile
 
 # Run the executable
 run: build/$(EXECUTABLE)
-	./$(CMAKE_BUILD_DIR)/$(EXECUTABLE)
+	@echo "Running Singular Message Compatibility Test"
+	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE)
+
+# run with repeated message
+run_rr: build/$(EXECUTABLE)
+	@echo "Running Repeated Message Compatibility Test"
+	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rr
 
 # run with repeated ints
 run_ri: build/$(EXECUTABLE)
-	./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) ri
+	@echo "Running Repeated Primitive Field Compatibility Test"
+	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) ri
 
 # run with repeated strings
 run_rs: build/$(EXECUTABLE)
-	./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rs
+	@echo "Running Repeated String Field Compatibility Test"
+	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rs
 
-# run with repeated strings
+# run with repeated message fields
 run_rm: build/$(EXECUTABLE)
-	./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rm
+	@echo "Running Repeated Message Field Compatibility Test"
+	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rm
 
 # Clean the build directory
 clean:
