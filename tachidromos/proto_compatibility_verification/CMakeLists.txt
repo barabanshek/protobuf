@@ -1,3 +1,4 @@
+# if you want to compile with the new or old lib, you need to (un)comment the corresponding line in the add_executable command
 cmake_minimum_required (VERSION 3.16)
 
 # gcc setup
@@ -26,6 +27,8 @@ link_directories($ENV{PROTO_PATH}/third_party/abseil-cpp)
 link_directories(/home/christos/qpl_install_dir/lib)
 
 include_directories(protos)
+include_directories($ENV{PROTO_PATH}/tachidromos/iaa_dsa_tachidromos_lib)
+include_directories($ENV{PROTO_PATH}/tachidromos/proto_compatibility_verification/protos)
 
 # add qpl include directory
 #include_directories(/data/sanchez/users/shab/iaa/qpl-install/include/)
@@ -68,7 +71,6 @@ set(protobuf_ABSL_USED_TARGETS
     absl::variant
 )
 
-#
-#add_executable(test main.cc exp/stubs/exp/person.pb.cc)
-add_executable(test main.cc protos/test.pb.cc)
+add_executable(test src/new_lib_main.cc protos/test.pb.cc)
+#add_executable(test src/main.cc protos/test.pb.cc)
 target_link_libraries(test protobuf ${protobuf_ABSL_USED_TARGETS} utf8_validity qpl)

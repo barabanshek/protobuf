@@ -13,6 +13,7 @@ all: run run_ri run_rs run_rm run_rr
 proto: $(PROTO_GEN_DIR)/test.pb.cc
 
 $(PROTO_GEN_DIR)/test.pb.cc: $(PROTO_SRC)
+	mkdir -p $(PROTO_GEN_DIR)
 	$(PROTOC) --cpp_out=$(PROTO_CPP_OUT) $(PROTO_SRC)
 
 # Build the project using CMake
@@ -30,27 +31,27 @@ build: $(CMAKE_BUILD_DIR)/Makefile
 # Run the executable
 run: build/$(EXECUTABLE)
 	@echo "Running Singular Message Compatibility Test"
-	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE)
+	@sudo ./$(CMAKE_BUILD_DIR)/$(EXECUTABLE)
 
 # run with repeated message
 run_rr: build/$(EXECUTABLE)
 	@echo "Running Repeated Message Compatibility Test"
-	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rr
+	@sudo ./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rr
 
 # run with repeated ints
 run_ri: build/$(EXECUTABLE)
 	@echo "Running Repeated Primitive Field Compatibility Test"
-	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) ri
+	@sudo ./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) ri
 
 # run with repeated strings
 run_rs: build/$(EXECUTABLE)
 	@echo "Running Repeated String Field Compatibility Test"
-	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rs
+	@sudo ./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rs
 
 # run with repeated message fields
 run_rm: build/$(EXECUTABLE)
 	@echo "Running Repeated Message Field Compatibility Test"
-	@./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rm
+	@sudo ./$(CMAKE_BUILD_DIR)/$(EXECUTABLE) rm
 
 # Clean the build directory
 clean:

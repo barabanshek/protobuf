@@ -2,10 +2,9 @@
 #include <string>
 #include <google/protobuf/util/message_differencer.h>
 
-#include"protos/test.pb.h"
-//#include"test.pb.h"
-#include"iaa_lib/scatter_gather.h"
-#include"iaa_lib/iaa_comp.h"
+#include"test.pb.h"
+#include"scatter_gather.h"
+#include"no_class_iaa_comp.h"
 
 #define BUFFER_SIZE 4*4096
 
