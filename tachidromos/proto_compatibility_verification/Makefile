@@ -55,6 +55,7 @@ run_rm: build/$(EXECUTABLE)
 
 # Clean the build directory
 clean:
-	rm -rf $(CMAKE_BUILD_DIR) $(PROTO_GEN_DIR)/test.pb.cc $(PROTO_GEN_DIR)/test.pb.h
+	rm -rf $(CMAKE_BUILD_DIR) $(PROTO_GEN_DIR)
+# rm -rf $(CMAKE_BUILD_DIR) $(PROTO_GEN_DIR)/test.pb.cc $(PROTO_GEN_DIR)/test.pb.h
 
 .PHONY: all proto build run clean
