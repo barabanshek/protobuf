@@ -27,7 +27,7 @@ private:
     std::vector<std::chrono::nanoseconds> allocation_durations;
     // Sender and Receiver messages
     std::vector<M> sender_messages;
-    std::vector<M> receiver_messages;
+    std::vector<M> out_messages;
     // Gather utilities
     ScatterGather scagatherer;
     std::vector<ScatterGather::Schema> gather_schemas;
@@ -49,11 +49,11 @@ private:
 public:
     RequestSim(size_t MAX_REQUESTS=100, size_t BUFFER_SIZE=4096, size_t SCHEMA_LENGTH=256, IAAComp* iaa=nullptr, qpl_path_t path=qpl_path_software);
     ~RequestSim();
-    int proto_ser_request(int);
-    int proto_deser_request(int);
-    int tachidromos_ser_request(int);
-    int tachidromos_deser_request(int);
-    void verify_correctness();
+    int proto_ser_request(size_t);
+    int proto_deser_request(size_t);
+    int tachidromos_ser_request(size_t);
+    int tachidromos_deser_request(size_t);
+    bool verify_correctness();
     void report_timings(std::vector<std::chrono::nanoseconds> perfs, std::string stat);
     void report();
 };

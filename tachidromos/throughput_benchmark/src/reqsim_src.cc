@@ -3,8 +3,10 @@
 RequestSim::RequestSim(size_t max_requests, size_t buffer_size, size_t schema_length, IAAComp* iaa, qpl_path_t path)
     : MAX_REQUESTS(max_requests), BUFFER_SIZE(buffer_size), SCHEMA_LENGTH(schema_length), iaa(iaa)
 {
-    if (iaa == nullptr)
-        iaa = new IAAComp(path);
+    if (iaa == nullptr){
+        std::cerr << "IAAComp object is not provided. Creating a new one." << std::endl;
+        this->iaa = new IAAComp(path);
+    }
 
     // Resize gather_outs based on MAX_REQUESTS and BUFFER_SIZE
     for (size_t i = 0; i < MAX_REQUESTS; ++i) {
@@ -28,10 +30,11 @@ RequestSim::RequestSim(size_t max_requests, size_t buffer_size, size_t schema_le
         M m;
 
         // <------------ SETTERS ------>
-		(&m)->set_f1(878175063 + (i * 1) % 8);
-		(&m)->set_f2(16026 + (i * 1) % 8);
-		(&m)->set_f3(3704621 + (i * 1) % 8);
-		(&m)->set_f4(1355539833 + (i * 1) % 8);
+		(&m)->set_f1(2025514 + (i * 1) % 8);
+		(&m)->set_f2(201 + (i * 1) % 8);
+		(&m)->set_f3(1479798053 + (i * 1) % 8);
+		(&m)->set_f4(517044834 + (i * 1) % 8);
+		(&m)->set_f5("CNNST2FVVN");
 
         //messages[i] = m;
         sender_messages.push_back(m);
@@ -45,11 +48,12 @@ RequestSim::RequestSim(size_t max_requests, size_t buffer_size, size_t schema_le
     // Allocate Receiver messages for IAA requests
     for (size_t i = 0; i < MAX_REQUESTS; ++i) {
         M m;
-        receiver_messages.push_back(m);
+        out_messages.push_back(m);
     }
 }
 
 RequestSim::~RequestSim() {
+    delete iaa;
     for (size_t i = 0; i < MAX_REQUESTS; ++i) {
         delete[] compressed[i];
         delete[] decompressed[i];
@@ -60,7 +64,8 @@ RequestSim::~RequestSim() {
     delete[] decomprOutputSize;
 }
 
-int RequestSim::proto_ser_request(int i) {
+int RequestSim::proto_ser_request(size_t i) {
+    assert(i < MAX_REQUESTS);
     std::chrono::steady_clock::time_point begin, end;
     std::chrono::nanoseconds duration;
     begin = std::chrono::steady_clock::now();
@@ -77,7 +82,8 @@ int RequestSim::proto_ser_request(int i) {
     return 0;
 }
 
-int RequestSim::proto_deser_request(int i) {
+int RequestSim::proto_deser_request(size_t i) {
+    assert(i < MAX_REQUESTS);
     std::chrono::steady_clock::time_point begin, end;
     std::chrono::nanoseconds duration;
 
@@ -94,7 +100,9 @@ int RequestSim::proto_deser_request(int i) {
     return 0;
 }
 
-int RequestSim::tachidromos_ser_request(int i) {
+int RequestSim::tachidromos_ser_request(size_t i) {
+    assert(i < MAX_REQUESTS);
+    assert(iaa != nullptr);
     std::chrono::steady_clock::time_point begin, end;
     std::chrono::nanoseconds duration;
 
@@ -109,7 +117,6 @@ int RequestSim::tachidromos_ser_request(int i) {
     sender_messages[i].generate_schema(gather_schema);
     sender_messages[i].generate_scatter_sizes(sizes);
     end = std::chrono::steady_clock::now();
-    std::cout << "Gather schema generation HERE" << std::endl;
 
     gather_schemas.push_back(gather_schema);
     sizes_for_scatter.push_back(sizes);
@@ -127,12 +134,10 @@ int RequestSim::tachidromos_ser_request(int i) {
     }
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
     gather_durations.push_back(duration);
-    std::cout << "Gather HERE" << std::endl;
 
     // 3. Compression
     begin = std::chrono::steady_clock::now();
     outcome = iaa->compress(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
-    std::cout << "Compression HERE" << std::endl;
     end = std::chrono::steady_clock::now();
     if (outcome) {
         std::cerr << "Benchmark error." << std::endl;
@@ -143,7 +148,9 @@ int RequestSim::tachidromos_ser_request(int i) {
     return 0;
 }
 
-int RequestSim::tachidromos_deser_request(int i) {
+int RequestSim::tachidromos_deser_request(size_t i) {
+    assert(i < MAX_REQUESTS);
+    assert(iaa != nullptr);
     std::chrono::steady_clock::time_point begin, end;
     std::chrono::nanoseconds duration;
 
@@ -152,6 +159,9 @@ int RequestSim::tachidromos_deser_request(int i) {
     std::string dummy_str("a", sizes_for_scatter[0][1]);
     begin = std::chrono::steady_clock::now();
     // <------------ STRING SETTERS ------>
+		{ // DEPTH = 1, WIDTH = 0
+		(&out_messages[i])->set_f5(dummy_str);
+		}
     end = std::chrono::steady_clock::now();
 
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
@@ -161,7 +171,7 @@ int RequestSim::tachidromos_deser_request(int i) {
     ScatterGather::Schema scatter_schema;
     scatter_schema.reserve(SCHEMA_LENGTH);
     begin = std::chrono::steady_clock::now();
-    receiver_messages[i].generate_schema(scatter_schema);
+    out_messages[i].generate_schema(scatter_schema);
     end = std::chrono::steady_clock::now();
     scatter_schemas.push_back(scatter_schema);
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
@@ -192,12 +202,12 @@ int RequestSim::tachidromos_deser_request(int i) {
     return 0;
 }
 
-void RequestSim::verify_correctness() {
+bool RequestSim::verify_correctness() {
     bool all_correct = true;
     for (size_t i = 0; i < MAX_REQUESTS && all_correct; ++i) {
-        all_correct = google::protobuf::util::MessageDifferencer::Equivalent(sender_messages[i], receiver_messages[i]);
+        all_correct = google::protobuf::util::MessageDifferencer::Equivalent(sender_messages[i], out_messages[i]);
     }
-    std::cout << (all_correct ? "ALL CORRECT" : "ERROR: DATA MISSMATCH") << std::endl;
+    return all_correct;
 }
 
 void RequestSim::report_timings(std::vector<std::chrono::nanoseconds> perfs, std::string stat) {
