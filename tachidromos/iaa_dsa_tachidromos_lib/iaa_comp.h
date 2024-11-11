@@ -28,8 +28,8 @@ private:
             return nullptr;
         }
 
-        return std::move(job_buffer);
-        //return job_buffer;
+        //return std::move(job_buffer);
+        return job_buffer;
     }
 
     int free_qpl(qpl_job *job) {
@@ -50,13 +50,14 @@ public:
         }
         job = reinterpret_cast<qpl_job *>(global_job_buffer.get());
         assert(job != nullptr);
-        std::cout << "IAAComp initialized." << std::endl;
+        std::cerr << "IAAComp initialized successfully." << std::endl;
     }
 
     ~IAAComp() {
         if (free_qpl(job)) {
             std::cerr << "Failed to free resources." << std::endl;
         }
+        std::cerr << "IAAComp destroyed successfully." << std::endl;
     }
 
     int compress(uint8_t* src, uint32_t srcSize, uint8_t* outBStream, uint32_t outBufferSize, uint32_t* actualOutSize) {
@@ -69,7 +70,6 @@ public:
         job->flags          = QPL_FLAG_FIRST | QPL_FLAG_LAST | QPL_FLAG_OMIT_VERIFY;
 
         qpl_status status = qpl_execute_job(job);
-        std::cout << "Compressed" << std::endl;
         if (status != QPL_STS_OK) {
             std::cerr << "An error " << status << " acquired during compression." << std::endl;
             return -1;
