@@ -168,9 +168,8 @@ int main(int argc, char* argv[]) {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa
-    IAAComp* iaa = new IAAComp(qpl_path_software);
-	//iaa_init_jobs(qpl_path_hardware);
-	//iaa_init_jobs(qpl_path_software);
+    IAAComp iaa(qpl_path_software);
+    //IAAComp iaa(qpl_path_hardware);
 
     if (argc > 1 && std::string(argv[1]) == "rr") {
         // Initialize RepeatedMessage
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
         // compress
         uint8_t* compressed   = new uint8_t[BUFFER_SIZE];
         uint32_t comprOutputSize = 0;
-        outcome = iaa->compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
+        outcome = iaa.compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         if (outcome) {
             std::cerr << "Failed to compress" << std::endl;
             return -1;
@@ -235,7 +234,7 @@ int main(int argc, char* argv[]) {
         
         uint8_t* decompressed   = new uint8_t[BUFFER_SIZE];
         uint32_t decomprOutputSize = 0;
-        outcome = iaa->decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
+        outcome = iaa.decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         //outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         if (outcome) {
             std::cerr << "Failed to decompress" << std::endl;
@@ -292,7 +291,7 @@ int main(int argc, char* argv[]) {
         // compress
         uint8_t* compressed   = new uint8_t[BUFFER_SIZE];
         uint32_t comprOutputSize = 0;
-        outcome = iaa->compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
+        outcome = iaa.compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         //outcome = compress_with_IAA(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         if (outcome) {
             std::cerr << "Failed to compress" << std::endl;
@@ -307,7 +306,7 @@ int main(int argc, char* argv[]) {
         
         uint8_t* decompressed   = new uint8_t[BUFFER_SIZE];
         uint32_t decomprOutputSize = 0;
-        outcome = iaa->decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
+        outcome = iaa.decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         //outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         if (outcome) {
             std::cerr << "Failed to decompress" << std::endl;
@@ -369,7 +368,7 @@ int main(int argc, char* argv[]) {
             return -1;
         }
         uint32_t comprOutputSize = 0;
-        outcome = iaa->compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
+        outcome = iaa.compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         //outcome = compress_with_IAA(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         if (outcome) {
             std::cerr << "Failed to compress" << std::endl;
@@ -393,7 +392,7 @@ int main(int argc, char* argv[]) {
             return -1;
         }
         uint32_t decomprOutputSize = 0;
-        outcome = iaa->decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
+        outcome = iaa.decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         //outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         if (outcome) {
             std::cerr << "Failed to decompress" << std::endl;
@@ -449,7 +448,7 @@ int main(int argc, char* argv[]) {
         // compress
         uint8_t* compressed   = new uint8_t[BUFFER_SIZE];
         uint32_t comprOutputSize = 0;
-        outcome = iaa->compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
+        outcome = iaa.compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         //outcome = compress_with_IAA(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         if (outcome) {
             std::cerr << "Failed to compress" << std::endl;
@@ -470,7 +469,7 @@ int main(int argc, char* argv[]) {
         
         uint8_t* decompressed   = new uint8_t[BUFFER_SIZE];
         uint32_t decomprOutputSize = 0;
-        outcome = iaa->decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
+        outcome = iaa.decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         //outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         if (outcome) {
             std::cerr << "Failed to decompress" << std::endl;
@@ -525,7 +524,7 @@ int main(int argc, char* argv[]) {
         // compress
         uint8_t* compressed   = new uint8_t[BUFFER_SIZE];
         uint32_t comprOutputSize = 0;
-        outcome = iaa->compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
+        outcome = iaa.compress(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         //outcome = compress_with_IAA(gather_out.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         if (outcome) {
             std::cerr << "Failed to compress" << std::endl;
@@ -543,7 +542,7 @@ int main(int argc, char* argv[]) {
         
         uint8_t* decompressed   = new uint8_t[BUFFER_SIZE];
         uint32_t decomprOutputSize = 0;
-        outcome = iaa->decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
+        outcome = iaa.decompress(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         //outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         if (outcome) {
             std::cerr << "Failed to decompress" << std::endl;
