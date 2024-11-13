@@ -4,9 +4,10 @@
 #include"scatter_gather.h"
 #include"no_class_iaa_comp.h"
 
-static constexpr size_t kNofIterations = 51;
+static constexpr size_t kNofIterations = 101;
 
-#define BUFFER_SIZE 4096
+//#define BUFFER_SIZE 4*4096
+#define SCHEMA_BUFFER_SIZE 4096/4
 
 void report_timings(std::vector<std::chrono::nanoseconds> perfs, std::string stat) {
     std::cout << stat << "(ns)";
@@ -36,18 +37,6 @@ int main () {
     std::chrono::steady_clock::time_point begin, end;
     std::chrono::nanoseconds duration;
 
-    // IAA utility arrays
-    uint8_t** compressed   = new uint8_t*[kNofIterations];
-    uint8_t** decompressed = new uint8_t*[kNofIterations];
-    for (size_t i = 0; i < kNofIterations; ++i) {
-        compressed[i]   = new uint8_t[BUFFER_SIZE];
-        decompressed[i] = new uint8_t[BUFFER_SIZE];
-    }
-
-    // arrays for keeping output size feedback from IAA
-    uint32_t* comprOutputSize   = new uint32_t[kNofIterations];
-    uint32_t* decomprOutputSize = new uint32_t[kNofIterations];
-
     for (size_t i = 0; i < kNofIterations; ++i) {
         M m;
 
@@ -63,11 +52,14 @@ int main () {
     std::vector<std::vector<size_t>> sizes_for_scatter;
     for (size_t i = 0; i < kNofIterations; ++i) {
         ScatterGather::Schema gather_schema;
+        gather_schema.reserve(SCHEMA_BUFFER_SIZE);
         std::vector<size_t> sizes;
+        sizes.reserve(SCHEMA_BUFFER_SIZE);
 
         begin = std::chrono::steady_clock::now();
-        // <------------ GATHER SCHEMA ------>
+		messages[i].generate_schema(gather_schema);
         end = std::chrono::steady_clock::now();
+		messages[i].generate_scatter_sizes(sizes);
         gather_schemas.push_back(gather_schema);
         sizes_for_scatter.push_back(sizes);
 
@@ -112,16 +104,28 @@ int main () {
         deserialization_durations.push_back(duration);
     }
 
+    // IAA utility arrays
+    size_t log_buffer_size = ceil(log2(ser_outs[0].size()))+1;
+    size_t BUFFER_SIZE = 1 << log_buffer_size;
+    uint8_t* compressed   = new uint8_t[1 << log_buffer_size];
+    uint8_t* decompressed = new uint8_t[1 << log_buffer_size];
+    // arrays for keeping output size feedback from IAA
+    uint32_t comprOutputSize;
+    uint32_t decomprOutputSize;
+
+
 
     // GATHER + COMPRESSION
     ScatterGather scagatherer;
     size_t out_size = 0;
-    std::vector<std::vector<uint8_t>> gather_outs(kNofIterations, std::vector<uint8_t>(BUFFER_SIZE, 0));
+    //std::vector<std::vector<uint8_t>> gather_outs(kNofIterations, std::vector<uint8_t>(BUFFER_SIZE, 0));
+    std::vector<uint8_t> gather_outs(1 << log_buffer_size, 0);
 
     // gather + compression
     for (size_t i = 0; i < kNofIterations; ++i) {
          begin = std::chrono::steady_clock::now();
-         auto outcome = scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size);
+         //auto outcome = scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs[i].data(), &out_size);
+         auto outcome = scagatherer.GatherWithMemCpy(gather_schemas[i], gather_outs.data(), &out_size);
          end = std::chrono::steady_clock::now();
 
         if (outcome) {
@@ -133,7 +137,8 @@ int main () {
         gather_durations.push_back(duration);
 
         begin = std::chrono::steady_clock::now();
-        outcome = compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+        //outcome = compress_with_IAA(gather_outs[i].data(), out_size, compressed[i], BUFFER_SIZE, &comprOutputSize[i]);
+        outcome = compress_with_IAA(gather_outs.data(), out_size, compressed, BUFFER_SIZE, &comprOutputSize);
         end = std::chrono::steady_clock::now();
 
         if (outcome) {
@@ -145,7 +150,7 @@ int main () {
         compression_durations.push_back(duration);
     }
     std::cout << "gather_out(bytes), " << out_size << "\n";
-    std::cout << "compress_out(bytes), " << comprOutputSize[0] << "\n";
+    std::cout << "compress_out(bytes), " << comprOutputSize << "\n";
 
     // DECOMPRESSION + SCATTER
 
@@ -173,6 +178,7 @@ int main () {
 
     for (size_t i = 0; i < kNofIterations; ++i) {
         ScatterGather::Schema scatter_schema;
+        scatter_schema.reserve(SCHEMA_BUFFER_SIZE);
 
         begin = std::chrono::steady_clock::now();
         // <------------ SCATTER SCHEMA ------>
@@ -187,7 +193,8 @@ int main () {
     // decompress+scatter
     for (size_t i = 0; i < messages.size(); ++i) {
         begin = std::chrono::steady_clock::now();
-        auto outcome = decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i]);
+        //auto outcome = decompress_with_IAA(compressed[i], comprOutputSize[i], decompressed[i], BUFFER_SIZE, &decomprOutputSize[i]);
+        auto outcome = decompress_with_IAA(compressed, comprOutputSize, decompressed, BUFFER_SIZE, &decomprOutputSize);
         end = std::chrono::steady_clock::now();
 
         if (outcome) {
@@ -199,7 +206,8 @@ int main () {
         decompression_durations.push_back(duration);
 
         begin = std::chrono::steady_clock::now();
-        outcome = scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i]);
+        //outcome = scagatherer.ScatterWithMemCpy(decompressed[i], scatter_schemas[i]);
+        outcome = scagatherer.ScatterWithMemCpy(decompressed, scatter_schemas[i]);
         end = std::chrono::steady_clock::now();
 
         if (outcome) {
@@ -210,7 +218,12 @@ int main () {
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         scatter_durations.push_back(duration);
     }
-    std::cout << "decompress_out(bytes), " << decomprOutputSize[0] << "\n";
+    std::cout << "decompress_out(bytes), " << decomprOutputSize << "\n";
+    /*
+    for (size_t i = 0; i < BUFFER_SIZE; ++i) {
+        assert(decompressed[i] == gather_outs[i]);
+    }
+    */
 
     // Verify correctness
     bool all_correct = true;
@@ -232,10 +245,6 @@ int main () {
     // Optional:  Delete all global objects allocated by libprotobuf.
     //google::protobuf::ShutdownProtobufLibrary();
 
-    for (size_t i = 0; i < kNofIterations; ++i) {
-        delete[] compressed[i];
-        delete[] decompressed[i];
-    }
     delete[] compressed;
     delete[] decompressed;
 

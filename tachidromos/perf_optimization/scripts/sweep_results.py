@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 
-protobuf_path = '/home/christos/final/protobuf/'
+protobuf_path = '/home/christos/dev/protobuf/'
 benchmark_path = protobuf_path + 'tachidromos/schema_creation_optimization/scripts/'
 
 def dist_plot(df, name):
@@ -194,9 +194,10 @@ data_frame = pd.DataFrame(df, columns=col_names)
 print(data_frame.to_string())
 
 if args.plot:
-    if not os.path.exists('plots'):
-        os.makedirs('plots')
-        print("Created plots/ directory")
-    dist_plot(data_frame, 'plots/time_distribution_plot.png')
-    ser_perf_plot(data_frame, 'plots/perf_serialization.png')
-    deser_perf_plot(data_frame, 'plots/perf_deserialization.png')
+    plt_dir = 'plots' + "_w_" + "_".join(map(str, args.widths)) + "_d_" + "_".join(map(str, args.depths)) + "_r_" + "_".join(map(str, args.ratios)) + "_s_" + "_".join(map(str, args.sets))
+    if not os.path.exists(plt_dir):
+        os.makedirs(plt_dir)
+        print("Created" + plt_dir + "directory")
+    dist_plot(data_frame, plt_dir + '/time_distribution_plot.png')
+    ser_perf_plot(data_frame, plt_dir + '/perf_serialization.png')
+    deser_perf_plot(data_frame, plt_dir + '/perf_deserialization.png')

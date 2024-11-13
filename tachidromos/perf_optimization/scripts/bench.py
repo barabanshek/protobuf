@@ -4,13 +4,16 @@ import sys
 import re
 import matplotlib.pyplot as plt
 
-protobuf_path = '/home/christos/final/protobuf/'
+protobuf_path = '/home/christos/dev/protobuf/'
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), protobuf_path + 'tachidromos/general_utilities'))
 
 from proto_generator import *
 
 benchmark_path = protobuf_path + 'tachidromos/schema_creation_optimization/'
 benchmark_tmpl_path = benchmark_path + "src/main.cc"
+#benchmark_tmpl_path = benchmark_path + "src/one_buffer.cc"
+#benchmark_tmpl_path = benchmark_path + "src/one_optimal_buffer.cc"
+#benchmark_tmpl_path = benchmark_path + "src/optimal_buffer.cc"
 benchmark_source_path = benchmark_path + "src/main_src.cc"
 
 import argparse
