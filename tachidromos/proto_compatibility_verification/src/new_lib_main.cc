@@ -168,8 +168,8 @@ int main(int argc, char* argv[]) {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa
-    IAAComp iaa(qpl_path_software);
-    //IAAComp iaa(qpl_path_hardware);
+    //IAAComp iaa(qpl_path_software);
+    IAAComp iaa(qpl_path_hardware);
 
     if (argc > 1 && std::string(argv[1]) == "rr") {
         // Initialize RepeatedMessage

@@ -1,5 +1,5 @@
 # Define variables
-PROTOC = /home/christos/final/protobuf/protoc
+PROTOC = /home/christos/dev/protobuf/protoc
 PROTO_SRC = test.proto
 PROTO_GEN_DIR = ./protos
 PROTO_CPP_OUT = $(PROTO_GEN_DIR)

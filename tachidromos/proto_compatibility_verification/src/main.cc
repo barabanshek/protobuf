@@ -168,8 +168,8 @@ int main(int argc, char* argv[]) {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     // initialize iaa jobs
-	//iaa_init_jobs(qpl_path_hardware);
-	iaa_init_jobs(qpl_path_software);
+	iaa_init_jobs(qpl_path_hardware);
+	//iaa_init_jobs(qpl_path_software);
 
     if (argc > 1 && std::string(argv[1]) == "rr") {
         // Initialize RepeatedMessage
