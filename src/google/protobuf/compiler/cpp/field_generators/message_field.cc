@@ -104,7 +104,9 @@ class SingularMessage : public FieldGeneratorBase {
   void GenerateNonInlineAccessorDefinitions(io::Printer* p) const override {}
 
   void GenerateDSASchemaCall(io::Printer* p) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* p) const override;
   void GenerateScatterSizesCall(io::Printer* p) const override;
+  void GenerateScatterPtrsCall(io::Printer* p) const override;
 
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
@@ -167,6 +169,23 @@ void SingularMessage::GenerateDSASchemaCall(io::Printer* p) const {
   )cc");
 }
 
+void SingularMessage::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+  $mutable_name$()->generate_seperated_schema(ptrs_list, sizes_list);
+  )cc");
+}
+
 void SingularMessage::GenerateScatterSizesCall(io::Printer* p) const {
   auto vars = AnnotatedAccessors(
       field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
@@ -181,6 +200,23 @@ void SingularMessage::GenerateScatterSizesCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
   $mutable_name$()->generate_scatter_sizes(sizes);
+  )cc");
+}
+
+void SingularMessage::GenerateScatterPtrsCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+  $mutable_name$()->generate_scatter_ptrs(ptrs);
   )cc");
 }
 
@@ -716,7 +752,9 @@ class RepeatedMessage : public FieldGeneratorBase {
 
   void GeneratePrivateMembers(io::Printer* p) const override;
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -763,6 +801,25 @@ void RepeatedMessage::GenerateDSASchemaCall(io::Printer* p) const {
   )cc");
 }
 
+void RepeatedMessage::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      mutable_nested_messages(i)->generate_seperated_schema(schema);
+    }
+  )cc");
+}
+
 void RepeatedMessage::GenerateScatterSizesCall(io::Printer* p) const {
   auto vars = AnnotatedAccessors(
       field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
@@ -778,6 +835,25 @@ void RepeatedMessage::GenerateScatterSizesCall(io::Printer* p) const {
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
       mutable_nested_messages(i)->generate_scatter_sizes(sizes);
+    }
+  )cc");
+}
+
+void RepeatedMessage::GenerateScatterPtrsCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    for (int i = 0; i < $name$_size(); ++i) {
+      mutable_nested_messages(i)->generate_scatter_ptrs(ptrs);
     }
   )cc");
 }

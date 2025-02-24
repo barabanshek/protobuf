@@ -184,6 +184,7 @@ class SingularStringView : public FieldGeneratorBase {
 
   void GenerateStaticMembers(io::Printer* p) const override;
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -217,6 +218,7 @@ void SingularStringView::GenerateStaticMembers(io::Printer* p) const {
 }
 
 void SingularStringView::GenerateDSASchemaCall(io::Printer* p) const {}
+void SingularStringView::GenerateDSASeperatedSchemaCall(io::Printer* p) const {}
 
 void SingularStringView::GenerateAccessorDeclarations(io::Printer* p) const {
   ABSL_CHECK(!field_->options().has_ctype());
@@ -643,6 +645,7 @@ class RepeatedStringView : public FieldGeneratorBase {
   }
 
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -652,6 +655,7 @@ class RepeatedStringView : public FieldGeneratorBase {
 };
 
 void RepeatedStringView::GenerateDSASchemaCall(io::Printer* p) const {}
+void RepeatedStringView::GenerateDSASeperatedSchemaCall(io::Printer* p) const {}
 
 void RepeatedStringView::GenerateAccessorDeclarations(io::Printer* p) const {
   bool unknown_ctype =

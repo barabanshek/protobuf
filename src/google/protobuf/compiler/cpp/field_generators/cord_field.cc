@@ -60,6 +60,7 @@ class CordFieldGenerator : public FieldGeneratorBase {
 
   void GeneratePrivateMembers(io::Printer* printer) const override;
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* printer) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* printer) const override;
   void GenerateClearingCode(io::Printer* printer) const override;
@@ -154,6 +155,9 @@ void CordFieldGenerator::GeneratePrivateMembers(io::Printer* printer) const {
 }
 
 void CordFieldGenerator::GenerateDSASchemaCall(
+    io::Printer* printer) const {}
+
+void CordFieldGenerator::GenerateDSASeperatedSchemaCall(
     io::Printer* printer) const {}
 
 

@@ -667,6 +667,93 @@ void MessageGenerator::GenerateDSASchema(io::Printer* p) {
             )cc");
 }
 
+void MessageGenerator::GenerateDSASeperatedSchema(io::Printer* p) {
+    p->Emit({{"non_pointer_schema",
+              [&] {
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    ptrs_list.push_back(start_addr);
+                    sizes_list.push_back(end_addr - start_addr + sizeof($last$()));
+                )cc");
+               }
+               }
+            },
+            {"recursive_schemas",
+              [&] {
+                for (auto field : optimized_order_) {
+                    field_generators_.get(field).GenerateDSASeperatedSchemaCall(p);
+                }
+              }}},
+            R"cc(
+            void generate_seperated_schema(std::vector<uint8_t*> &ptrs_list, std::vector<size_t> &sizes_list) {
+                $non_pointer_schema$;
+                $recursive_schemas$;
+            }
+            )cc");
+}
+
+void MessageGenerator::GenerateScatterPtrs(io::Printer* p) {
+    p->Emit({{"non_pointer_sizes",
+              [&] {
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    //auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    ptrs.push_back(start_addr);
+                )cc");
+               }
+               }
+            },
+            {"recursive_sizes",
+              [&] {
+                for (auto field : optimized_order_) {
+                    field_generators_.get(field).GenerateScatterPtrsCall(p);
+                }
+              }}},
+            R"cc(
+            void generate_scatter_ptrs(std::vector<uint8_t*> &ptrs) {
+                $non_pointer_sizes$;
+                $recursive_sizes$;
+            }
+            )cc");
+}
+
 void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
     p->Emit({{"non_pointer_sizes",
               [&] {
@@ -706,6 +793,51 @@ void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
             void generate_scatter_sizes(std::vector<size_t> &sizes) {
                 $non_pointer_sizes$;
                 $recursive_sizes$;
+            }
+            )cc");
+}
+
+void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
+    p->Emit({{"string_fields",
+              [&] {
+                size_t idx = 1; // Start from 1 since idx 0 is for non-pointer fields
+                for (auto field : optimized_order_) {
+                    if (field->is_repeated()) continue;
+                    
+                    FieldDescriptor::Type type = field->type();
+                    if (type != FieldDescriptor::TYPE_STRING && 
+                        type != FieldDescriptor::TYPE_BYTES) continue;
+
+                    p->Emit({{"field", FieldName(field)},
+                            {"index", idx++}},
+                           R"cc(
+                              std::string tmp_str$index$(sizes[idx++], 'x');  // Preallocate needed size
+                              set_$field$(std::move(tmp_str$index$));
+                           )cc");
+                             //if (!_impl_.$field$_.empty()) {
+                             //}
+                }
+              }},
+            {"message_fields", 
+              [&] {
+                for (auto field : optimized_order_) {
+                    if (field->is_repeated()) continue;
+                    if (field->type() != FieldDescriptor::TYPE_MESSAGE) continue;
+                    
+                    p->Emit({{"field", FieldName(field)}},
+                           R"cc(
+                              mutable_$field$()->allocate_from_sizes(sizes); 
+                           )cc");
+                             //if (has_$field$()) {
+                             //}
+                }
+              }}},
+            R"cc(
+            size_t allocate_from_sizes(std::vector<size_t> &sizes, size_t idx = 0) {
+                idx++;
+                $string_fields$;
+                $message_fields$;
+                return idx;
             }
             )cc");
 }
@@ -1933,9 +2065,18 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
         [&] {
           GenerateDSASchema(p);
         }},
+       {"seperated_schemas",
+        [&] {
+          GenerateDSASeperatedSchema(p);
+        }},
        {"sizes_for_scatter",
         [&] {
+          GenerateScatterPtrs(p);
           GenerateScatterSizes(p);
+        }},
+       {"allocate_from_sizes",
+        [&] {
+          GenerateAllocateFromSizes(p);
         }},
        {"decl_field_accessors",
         [&] {
@@ -2110,7 +2251,9 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
 
           // schemas for IAA/DSA ---------------------------------------------
           $schemas$;
+          $seperated_schemas$;
           $sizes_for_scatter$;
+          $allocate_from_sizes$;
 
           // accessors -------------------------------------------------------
           $decl_field_accessors$;

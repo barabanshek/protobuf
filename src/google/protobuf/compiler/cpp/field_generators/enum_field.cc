@@ -139,6 +139,7 @@ class SingularEnum : public FieldGeneratorBase {
   }
 
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
 
@@ -147,6 +148,7 @@ class SingularEnum : public FieldGeneratorBase {
 };
 
 void SingularEnum::GenerateDSASchemaCall(io::Printer* p) const {}
+void SingularEnum::GenerateDSASeperatedSchemaCall(io::Printer* p) const {}
 
 void SingularEnum::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
@@ -365,6 +367,7 @@ class RepeatedEnum : public FieldGeneratorBase {
   void GenerateConstructorCode(io::Printer* p) const override {}
 
   void GenerateDSASchemaCall(io::Printer* printer) const override;
+  void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -376,6 +379,7 @@ class RepeatedEnum : public FieldGeneratorBase {
 };
 
 void RepeatedEnum::GenerateDSASchemaCall(io::Printer* p) const {}
+void RepeatedEnum::GenerateDSASeperatedSchemaCall(io::Printer* p) const {}
 
 void RepeatedEnum::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v = p->WithVars(
