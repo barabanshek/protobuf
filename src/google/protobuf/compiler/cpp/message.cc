@@ -624,6 +624,30 @@ void MessageGenerator::AddGenerators(
   }
 }
 
+bool HasNoPrimitiveFields(const Descriptor* descriptor) {
+  for (const auto* field : FieldRange(descriptor)) {
+    // Skip oneof and repeated fields
+    if (field->real_containing_oneof() || field->is_repeated()) continue;
+    
+    switch (field->cpp_type()) {
+      case FieldDescriptor::CPPTYPE_INT32:
+      case FieldDescriptor::CPPTYPE_INT64:
+      case FieldDescriptor::CPPTYPE_UINT32:
+      case FieldDescriptor::CPPTYPE_UINT64:
+      case FieldDescriptor::CPPTYPE_DOUBLE:
+      case FieldDescriptor::CPPTYPE_FLOAT:
+      case FieldDescriptor::CPPTYPE_BOOL:
+      case FieldDescriptor::CPPTYPE_ENUM:
+        return false;  // Found a primitive field
+        
+      case FieldDescriptor::CPPTYPE_STRING:
+      case FieldDescriptor::CPPTYPE_MESSAGE:
+        continue;  // Non-primitive fields
+    }
+  }
+  return true;  // No primitive fields found
+}
+
 void MessageGenerator::GenerateDSASchema(io::Printer* p) {
     p->Emit({{"non_pointer_schema",
               [&] {
@@ -685,16 +709,23 @@ void MessageGenerator::GenerateDSASeperatedSchema(io::Printer* p) {
                 }
 
                if (first_non_pointer_field && last_non_pointer_field) {
-               p->Emit({{"first", FieldName(first_non_pointer_field)},
-                       {"last", FieldName(last_non_pointer_field)}
-                       },
-                    R"cc(
-                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
-                    auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
-                    ptrs_list.push_back(start_addr);
-                    sizes_list.push_back(end_addr - start_addr + sizeof($last$()));
-                )cc");
+                p->Emit({{"first", FieldName(first_non_pointer_field)},
+                        {"last", FieldName(last_non_pointer_field)}
+                        },
+                        R"cc(
+                          auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                          auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                          ptrs_list.push_back(start_addr);
+                          sizes_list.push_back(end_addr - start_addr + sizeof($last$()));
+                        )cc");
                }
+               else if (HasNoPrimitiveFields(descriptor_)) {
+                  p->Emit(
+                      R"cc(
+                        ptrs_list.push_back(nullptr);
+                        sizes_list.push_back(0);
+                      )cc");
+                }
                }
             },
             {"recursive_schemas",
@@ -738,6 +769,12 @@ void MessageGenerator::GenerateScatterPtrs(io::Printer* p) {
                     ptrs.push_back(start_addr);
                 )cc");
                }
+               else if (HasNoPrimitiveFields(descriptor_)) {
+                  p->Emit(
+                      R"cc(
+                        ptrs.push_back(nullptr);
+                      )cc");
+                }
                }
             },
             {"recursive_sizes",
@@ -781,6 +818,12 @@ void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
                     sizes.push_back(end_addr - start_addr + sizeof($last$()));
                 )cc");
                }
+               else if (HasNoPrimitiveFields(descriptor_)) {
+                  p->Emit(
+                      R"cc(
+                        sizes.push_back(0);
+                      )cc");
+                }
                }
             },
             {"recursive_sizes",
@@ -793,6 +836,91 @@ void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
             void generate_scatter_sizes(std::vector<size_t> &sizes) {
                 $non_pointer_sizes$;
                 $recursive_sizes$;
+            }
+            )cc");
+}
+
+void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
+    p->Emit({{"non_pointer_ptrs",
+              [&] {
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    //auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    ptrs.push_back(start_addr);
+                )cc");
+               }
+               else if (HasNoPrimitiveFields(descriptor_)) {
+                  p->Emit(
+                      R"cc(
+                        ptrs.push_back(nullptr);
+                      )cc");
+                }
+               }
+            },
+            {"string_fields",
+              [&] {
+                size_t idx = 1; // Start from 1 since idx 0 is for non-pointer fields
+                for (auto field : optimized_order_) {
+                    if (field->is_repeated()) continue;
+                    
+                    FieldDescriptor::Type type = field->type();
+                    if (type != FieldDescriptor::TYPE_STRING && 
+                        type != FieldDescriptor::TYPE_BYTES) continue;
+
+                    p->Emit({{"field", FieldName(field)},
+                            {"index", idx++}},
+                           R"cc(
+                              // allocate
+                              std::string tmp_str$index$(sizes[idx++], 'x');  // Preallocate needed size
+                              set_$field$(std::move(tmp_str$index$));
+                              // store pointer in the pointers list
+                              ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($field$().c_str())));
+                           )cc");
+                             //if (!_impl_.$field$_.empty()) {
+                             //}
+                }
+              }},
+            {"message_fields", 
+              [&] {
+                for (auto field : optimized_order_) {
+                    if (field->is_repeated()) continue;
+                    if (field->type() != FieldDescriptor::TYPE_MESSAGE) continue;
+                    
+                    p->Emit({{"field", FieldName(field)}},
+                           R"cc(
+                              idx = mutable_$field$()->generate_scatter_ptrs_and_allocate_from_sizes(ptrs, sizes, idx); 
+                           )cc");
+                             //if (has_$field$()) {
+                             //}
+                }
+              }}},
+            R"cc(
+            size_t generate_scatter_ptrs_and_allocate_from_sizes(std::vector<uint8_t*> &ptrs, std::vector<size_t> &sizes, size_t idx = 0) {
+                idx++;
+                // only primitive field pointers
+                $non_pointer_ptrs$;
+                // non-primitive field pointers + allocation
+                $string_fields$;
+                $message_fields$;
+                return idx;
             }
             )cc");
 }
@@ -826,7 +954,7 @@ void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
                     
                     p->Emit({{"field", FieldName(field)}},
                            R"cc(
-                              mutable_$field$()->allocate_from_sizes(sizes); 
+                              idx = mutable_$field$()->allocate_from_sizes(sizes, idx); 
                            )cc");
                              //if (has_$field$()) {
                              //}
@@ -2076,6 +2204,7 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
         }},
        {"allocate_from_sizes",
         [&] {
+          GenerateScatterPtrsAndAllocate(p);
           GenerateAllocateFromSizes(p);
         }},
        {"decl_field_accessors",

@@ -123,6 +123,7 @@ class FieldGeneratorBase {
   virtual void GenerateDSASeperatedSchemaCall(io::Printer* p) const = 0;
 
   //virtual void GenerateDSASeperatedSchemaCall(io::Printer* p) {};
+  virtual void GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {}
 
   virtual void GenerateScatterPtrsCall(io::Printer* p) const {}
 
@@ -327,6 +328,11 @@ class FieldGenerator {
   void GenerateDSASeperatedSchemaCall(io::Printer* p) const {
     auto vars = PushVarsForCall(p);
     impl_->GenerateDSASeperatedSchemaCall(p);
+  }
+
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+    auto vars = PushVarsForCall(p);
+    impl_->GenerateScatterPtrsCall(p);
   }
 
   void GenerateScatterPtrsCall(io::Printer* p) const {

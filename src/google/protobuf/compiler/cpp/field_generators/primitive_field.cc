@@ -472,7 +472,7 @@ void RepeatedPrimitive::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
       p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
   p->Emit(R"cc(
     ptrs_list.push_back(reinterpret_cast<uint8_t*>(const_cast<$Type$*>($name$().data())));
-    sizes_list.push_back($name$().size() * sizeof($Type$)));
+    sizes_list.push_back($name$().size() * sizeof($Type$));
   )cc");
 }
 

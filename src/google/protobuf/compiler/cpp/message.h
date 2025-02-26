@@ -90,6 +90,7 @@ class MessageGenerator {
   // for IAA/DSA
   void GenerateDSASchema(io::Printer* p);
   void GenerateDSASeperatedSchema(io::Printer* p);
+  void GenerateScatterPtrsAndAllocate(io::Printer* p);
   void GenerateScatterPtrs(io::Printer* p);
   void GenerateScatterSizes(io::Printer* p);
   void GenerateAllocateFromSizes(io::Printer* p);

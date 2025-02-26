@@ -796,7 +796,7 @@ void RepeatedMessage::GenerateDSASchemaCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      mutable_nested_messages(i)->generate_schema(schema);
+      $mutable_name$(i)->generate_schema(schema);
     }
   )cc");
 }
@@ -815,7 +815,7 @@ void RepeatedMessage::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      mutable_nested_messages(i)->generate_seperated_schema(schema);
+      $mutable_name$(i)->generate_seperated_schema(ptrs_list, sizes_list);
     }
   )cc");
 }
@@ -834,7 +834,7 @@ void RepeatedMessage::GenerateScatterSizesCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      mutable_nested_messages(i)->generate_scatter_sizes(sizes);
+      $mutable_name$(i)->generate_scatter_sizes(sizes);
     }
   )cc");
 }
@@ -853,7 +853,7 @@ void RepeatedMessage::GenerateScatterPtrsCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      mutable_nested_messages(i)->generate_scatter_ptrs(ptrs);
+      $mutable_name$(i)->generate_scatter_ptrs(ptrs);
     }
   )cc");
 }

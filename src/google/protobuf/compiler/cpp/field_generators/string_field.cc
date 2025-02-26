@@ -947,8 +947,8 @@ void RepeatedString::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      ptrs_list.push_back(std::make_tuple(reinterpret_cast<uint8_t*>(const_cast<char*>($name$().c_str())));
-      sizes_list.push_back($name$().size()));
+      ptrs_list.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).c_str())));
+      sizes_list.push_back($name$(i).size());
     }
   )cc");
 }
@@ -990,7 +990,7 @@ void RepeatedString::GenerateScatterPtrsCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
     for (int i = 0; i < $name$_size(); ++i) {
-      ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$().c_str())));
+      ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).c_str())));
     }
   )cc");
 }
