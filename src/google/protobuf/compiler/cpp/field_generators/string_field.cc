@@ -188,6 +188,7 @@ class SingularString : public FieldGeneratorBase {
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
+  void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -299,6 +300,29 @@ void SingularString::GenerateScatterPtrsCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
         ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$().c_str())));
+      )cc");
+
+}
+
+void SingularString::GenerateAllocateFromSizesCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+        {
+          std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
+          set_$name$(std::move(tmp_str));
+        }
       )cc");
 
 }
@@ -902,6 +926,7 @@ class RepeatedString : public FieldGeneratorBase {
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
+  void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -946,6 +971,8 @@ void RepeatedString::GenerateDSASeperatedSchemaCall(io::Printer* p) const {
   auto v3 = p->WithVars(
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
+    ptrs_list.push_back(nullptr);
+    sizes_list.push_back($name$().size());
     for (int i = 0; i < $name$_size(); ++i) {
       ptrs_list.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).c_str())));
       sizes_list.push_back($name$(i).size());
@@ -968,6 +995,7 @@ void RepeatedString::GenerateScatterSizesCall(io::Printer* p) const {
   auto v3 = p->WithVars(
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
+    sizes.push_back($name$().size());
     for (int i = 0; i < $name$_size(); ++i) {
       sizes.push_back($name$(i).size());
     }
@@ -989,8 +1017,32 @@ void RepeatedString::GenerateScatterPtrsCall(io::Printer* p) const {
   auto v3 = p->WithVars(
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
+    ptrs.push_back(nullptr);
     for (int i = 0; i < $name$_size(); ++i) {
       ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).c_str())));
+    }
+  )cc");
+}
+
+void RepeatedString::GenerateAllocateFromSizesCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    size_t num_$name$_entries = sizes[idx++];
+    for (size_t i = 0; i < num_$name$_entries; ++i) {
+        std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
+        add_$name$(std::move(tmp_str));
     }
   )cc");
 }

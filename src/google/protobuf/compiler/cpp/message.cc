@@ -889,8 +889,12 @@ void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
                             {"index", idx++}},
                            R"cc(
                               // allocate
-                              std::string tmp_str$index$(sizes[idx++], 'x');  // Preallocate needed size
-                              set_$field$(std::move(tmp_str$index$));
+                              {
+                              std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
+                              set_$field$(std::move(tmp_str));
+                              }
+                              //std::string tmp_str$index$(sizes[idx++], 'x');  // Preallocate needed size
+                              //set_$field$(std::move(tmp_str$index$));
                               // store pointer in the pointers list
                               ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($field$().c_str())));
                            )cc");
@@ -925,6 +929,26 @@ void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
             )cc");
 }
 
+/*
+*/
+void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
+    p->Emit({
+            {"recursive_fields",
+              [&] {
+                for (auto field : optimized_order_) {
+                    field_generators_.get(field).GenerateAllocateFromSizesCall(p);
+                }
+              }}},
+            R"cc(
+            size_t allocate_from_sizes(std::vector<size_t> &sizes, size_t idx = 0) {
+                idx++;
+                $recursive_fields$;
+                return idx;
+            }
+            )cc");
+}
+
+/*
 void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
     p->Emit({{"string_fields",
               [&] {
@@ -939,10 +963,26 @@ void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
                     p->Emit({{"field", FieldName(field)},
                             {"index", idx++}},
                            R"cc(
-                              std::string tmp_str$index$(sizes[idx++], 'x');  // Preallocate needed size
-                              set_$field$(std::move(tmp_str$index$));
+                           {
+                              std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
+                              set_$field$(std::move(tmp_str));
+                           }
                            )cc");
                              //if (!_impl_.$field$_.empty()) {
+                             //}
+                }
+              }},
+            {"repeated_fields", 
+              [&] {
+                for (auto field : optimized_order_) {
+                    if (field->is_repeated()) continue;
+                    if (field->type() != FieldDescriptor::TYPE_MESSAGE) continue;
+                    
+                    p->Emit({{"field", FieldName(field)}},
+                           R"cc(
+                              idx = mutable_$field$()->allocate_from_sizes(sizes, idx); 
+                           )cc");
+                             //if (has_$field$()) {
                              //}
                 }
               }},
@@ -969,6 +1009,7 @@ void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
             }
             )cc");
 }
+*/
 
 void MessageGenerator::GenerateFieldAccessorDeclarations(io::Printer* p) {
   auto v = p->WithVars(MessageVars(descriptor_));
