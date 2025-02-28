@@ -253,6 +253,23 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   // if arena is a nullptr.
   Message* New(Arena* arena) const override = 0;
 
+  // Ser1de compatibility methods
+  virtual void generate_seperated_schema(std::vector<uint8_t*>& ptrs_list, std::vector<size_t>& sizes_list) {
+      throw std::runtime_error("generate_separate_schema method not implemented");
+  }
+  
+  virtual size_t generate_scatter_ptrs_and_allocate_from_sizes(std::vector<uint8_t*>& ptrs, std::vector<size_t>& sizes, size_t idx = 0) {
+      throw std::runtime_error("generate_scatter_ptrs_and_allocate_from_sizes method not implemented"); 
+  }
+
+  virtual size_t allocate_from_sizes(std::vector<size_t> &sizes, size_t idx = 0) {
+      throw std::runtime_error("allocate_from_sizes method not implemented"); 
+  }
+
+  virtual void generate_scatter_ptrs(std::vector<uint8_t*> &ptrs) {
+      throw std::runtime_error("generate_scatter_ptrs method not implemented"); 
+  }
+
   // Make this message into a copy of the given message.  The given message
   // must have the same descriptor, but need not necessarily be the same class.
   // By default this is just implemented as "Clear(); MergeFrom(from);".
