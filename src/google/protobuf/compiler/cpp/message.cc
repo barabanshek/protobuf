@@ -694,6 +694,24 @@ void MessageGenerator::GenerateDSASchema(io::Printer* p) {
 void MessageGenerator::GenerateDSASeperatedSchema(io::Printer* p) {
     p->Emit({{"non_pointer_schema",
               [&] {
+              // Add has_bits if present
+              if (!has_bit_indices_.empty()) {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the schema
+                      ptrs_list.push_back(reinterpret_cast<uint8_t*>(&_impl_._has_bits_));
+                      sizes_list.push_back(sizeof(_impl_._has_bits_));
+                    )cc");
+              }
+              else {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the schema
+                      ptrs_list.push_back(nullptr);
+                      sizes_list.push_back(0);
+                    )cc");
+              }
+
               //get first and last non-pointer fields
                const FieldDescriptor* first_non_pointer_field = nullptr;
                const FieldDescriptor* last_non_pointer_field = nullptr;
@@ -713,6 +731,7 @@ void MessageGenerator::GenerateDSASeperatedSchema(io::Printer* p) {
                         {"last", FieldName(last_non_pointer_field)}
                         },
                         R"cc(
+                          // Include the primitives in the schema
                           auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
                           auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
                           ptrs_list.push_back(start_addr);
@@ -745,6 +764,22 @@ void MessageGenerator::GenerateDSASeperatedSchema(io::Printer* p) {
 void MessageGenerator::GenerateScatterPtrs(io::Printer* p) {
     p->Emit({{"non_pointer_sizes",
               [&] {
+              // Add has_bits if present
+              if (!has_bit_indices_.empty()) {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the ptrs (always included, since this method is used for deserialization)
+                      ptrs.push_back(reinterpret_cast<uint8_t*>(&_impl_._has_bits_));
+                    )cc");
+              }
+              else {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the ptrs (always included, since this method is used for deserialization)
+                      ptrs.push_back(nullptr);
+                    )cc");
+              }
+
               //get first and last non-pointer fields
                const FieldDescriptor* first_non_pointer_field = nullptr;
                const FieldDescriptor* last_non_pointer_field = nullptr;
@@ -764,6 +799,7 @@ void MessageGenerator::GenerateScatterPtrs(io::Printer* p) {
                        {"last", FieldName(last_non_pointer_field)}
                        },
                     R"cc(
+                    // Include primitives in the pointers
                     auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
                     //auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
                     ptrs.push_back(start_addr);
@@ -794,6 +830,22 @@ void MessageGenerator::GenerateScatterPtrs(io::Printer* p) {
 void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
     p->Emit({{"non_pointer_sizes",
               [&] {
+              // Add has_bits if present
+              if (!has_bit_indices_.empty()) {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the sizes
+                      sizes.push_back(sizeof(_impl_._has_bits_));
+                    )cc");
+              }
+              else {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the sizes
+                      sizes.push_back(0);
+                    )cc");
+              }
+
               //get first and last non-pointer fields
                const FieldDescriptor* first_non_pointer_field = nullptr;
                const FieldDescriptor* last_non_pointer_field = nullptr;
@@ -813,6 +865,7 @@ void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
                        {"last", FieldName(last_non_pointer_field)}
                        },
                     R"cc(
+                    // Include primitives in the sizes
                     auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
                     auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
                     sizes.push_back(end_addr - start_addr + sizeof($last$()));
@@ -840,6 +893,7 @@ void MessageGenerator::GenerateScatterSizes(io::Printer* p) {
             )cc");
 }
 
+/*
 void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
     p->Emit({{"non_pointer_ptrs",
               [&] {
@@ -928,7 +982,81 @@ void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
             }
             )cc");
 }
+*/
 
+void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
+    p->Emit({{"non_pointer_ptrs",
+              [&] {
+              // Add has_bits if present
+              if (!has_bit_indices_.empty()) {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the ptrs (always included, since this method is used for deserialization)
+                      ptrs.push_back(reinterpret_cast<uint8_t*>(&_impl_._has_bits_));
+                    )cc");
+              }
+              else {
+                p->Emit(
+                    R"cc(
+                      // Include _has_bits_ in the ptrs (always included, since this method is used for deserialization)
+                      ptrs.push_back(nullptr);
+                    )cc");
+              }
+
+              //get first and last non-pointer fields
+               const FieldDescriptor* first_non_pointer_field = nullptr;
+               const FieldDescriptor* last_non_pointer_field = nullptr;
+               for (auto field : optimized_order_) {
+                     if (field->is_repeated()) continue;
+                     FieldDescriptor::Type type = field->type();
+
+                     if (type == FieldDescriptor::TYPE_STRING) continue;
+                     if (type == FieldDescriptor::TYPE_BYTES) continue;
+                     if (type == FieldDescriptor::TYPE_MESSAGE) continue;
+                     if (first_non_pointer_field == nullptr) first_non_pointer_field = field;
+                     last_non_pointer_field = field;
+                }
+
+               if (first_non_pointer_field && last_non_pointer_field) {
+               p->Emit({{"first", FieldName(first_non_pointer_field)},
+                       {"last", FieldName(last_non_pointer_field)}
+                       },
+                    R"cc(
+                    auto start_addr = reinterpret_cast<uint8_t*>(&_impl_.$first$_);
+                    //auto end_addr = reinterpret_cast<uint8_t*>(&_impl_.$last$_);
+                    ptrs.push_back(start_addr);
+                )cc");
+               }
+               else if (HasNoPrimitiveFields(descriptor_)) {
+                  p->Emit(
+                      R"cc(
+                        ptrs.push_back(nullptr);
+                      )cc");
+                }
+               }
+            },
+            {"recursive_fields",
+              [&] {
+                for (auto field : optimized_order_) {
+                    field_generators_.get(field).GenerateAllocateFromSizesCall(p);
+                }
+              }
+            }
+            },
+            R"cc(
+            size_t generate_scatter_ptrs_and_allocate_from_sizes(std::vector<uint8_t*> &ptrs, std::vector<size_t> &sizes, size_t idx = 0) {
+                // skip has_bits array (no allocation is needed)
+                idx++;
+                // skip primitive fields (no allocation is needed)
+                idx++;
+                // only primitive field pointers
+                $non_pointer_ptrs$;
+                // recursive fields pointers + allocation
+                $recursive_fields$;
+                return idx;
+            }
+            )cc");
+}
 /*
 */
 void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
@@ -938,9 +1066,13 @@ void MessageGenerator::GenerateAllocateFromSizes(io::Printer* p) {
                 for (auto field : optimized_order_) {
                     field_generators_.get(field).GenerateAllocateFromSizesCall(p);
                 }
-              }}},
+              }}
+            },
             R"cc(
             size_t allocate_from_sizes(std::vector<size_t> &sizes, size_t idx = 0) {
+                // skip has_bits array (no allocation is needed)
+                idx++;
+                // skip primitive fields (no allocation is needed)
                 idx++;
                 $recursive_fields$;
                 return idx;

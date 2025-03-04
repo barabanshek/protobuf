@@ -320,8 +320,10 @@ void SingularString::GenerateAllocateFromSizesCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
         {
-          std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
-          set_$name$(std::move(tmp_str));
+          std::string tmp_str(sizes[idx], 'x');  // Preallocate needed size
+          if (sizes[idx++] != 0) {
+            set_$name$(std::move(tmp_str));
+          }
         }
       )cc");
 
