@@ -1038,7 +1038,7 @@ void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
             {"recursive_fields",
               [&] {
                 for (auto field : optimized_order_) {
-                    field_generators_.get(field).GenerateAllocateFromSizesCall(p);
+                    field_generators_.get(field).GenerateScatterPtrsAndAllocateCall(p);
                 }
               }
             }
@@ -1049,7 +1049,7 @@ void MessageGenerator::GenerateScatterPtrsAndAllocate(io::Printer* p) {
                 idx++;
                 // skip primitive fields (no allocation is needed)
                 idx++;
-                // only primitive field pointers
+                // primitive and has_bit field pointers
                 $non_pointer_ptrs$;
                 // recursive fields pointers + allocation
                 $recursive_fields$;

@@ -108,6 +108,7 @@ class SingularMessage : public FieldGeneratorBase {
   void GenerateScatterSizesCall(io::Printer* p) const override;
   void GenerateScatterPtrsCall(io::Printer* p) const override;
   void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* printer) const override;
 
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
@@ -235,6 +236,23 @@ void SingularMessage::GenerateAllocateFromSizesCall(io::Printer* p) const {
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
   p->Emit(R"cc(
       idx = $mutable_name$()->allocate_from_sizes(sizes, idx); 
+  )cc");
+}
+
+void SingularMessage::GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+      idx = $mutable_name$()->generate_scatter_ptrs_and_allocate_from_sizes(ptrs, sizes, idx); 
   )cc");
 }
 
@@ -769,11 +787,14 @@ class RepeatedMessage : public FieldGeneratorBase {
   }
 
   void GeneratePrivateMembers(io::Printer* p) const override;
+
   void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
   void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* printer) const override;
+
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -898,6 +919,29 @@ void RepeatedMessage::GenerateAllocateFromSizesCall(io::Printer* p) const {
     for (size_t i = 0; i < num_$name$_entries; ++i) {
       auto* new_msg = add_$name$();
       idx = new_msg->allocate_from_sizes(sizes, idx); 
+      //idx = $mutable_name$(i)->allocate_from_sizes(sizes, idx); 
+    }
+  )cc");
+}
+
+void RepeatedMessage::GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+  auto vars = AnnotatedAccessors(
+      field_, {"", "set_allocated_", "unsafe_arena_set_allocated_",
+               "unsafe_arena_release_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    size_t num_$name$_entries = sizes[idx++];
+    ptrs.push_back(nullptr);
+    for (size_t i = 0; i < num_$name$_entries; ++i) {
+      auto* new_msg = add_$name$();
+      idx = new_msg->generate_scatter_ptrs_and_allocate_from_sizes(ptrs, sizes, idx); 
       //idx = $mutable_name$(i)->allocate_from_sizes(sizes, idx); 
     }
   )cc");

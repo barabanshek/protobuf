@@ -370,6 +370,7 @@ class RepeatedEnum : public FieldGeneratorBase {
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* printer) const override;
   void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
 
   void GenerateAccessorDeclarations(io::Printer* p) const override;
@@ -430,6 +431,19 @@ void RepeatedEnum::GenerateAllocateFromSizesCall(io::Printer* p) const {
       p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
   p->Emit(R"cc(
     $mutable_name$()->Resize(sizes[idx++] / sizeof(int), 0);
+  )cc");
+}
+
+void RepeatedEnum::GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+  auto v = p->WithVars(
+      AnnotatedAccessors(field_, {"", "_internal_", "_internal_mutable_"}));
+  auto vs =
+      p->WithVars(AnnotatedAccessors(field_, {"set_", "add_"}, Semantic::kSet));
+  auto va =
+      p->WithVars(AnnotatedAccessors(field_, {"mutable_"}, Semantic::kAlias));
+  p->Emit(R"cc(
+    $mutable_name$()->Resize(sizes[idx++] / sizeof(int), 0);
+    ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<int*>($name$().data())));
   )cc");
 }
 

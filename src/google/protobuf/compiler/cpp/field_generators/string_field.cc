@@ -184,11 +184,14 @@ class SingularString : public FieldGeneratorBase {
   }
 
   void GenerateStaticMembers(io::Printer* p) const override;
+
   void GenerateDSASchemaCall(io::Printer* printer) const override;
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
   void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* printer) const override;
+
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateClearingCode(io::Printer* p) const override;
@@ -324,6 +327,32 @@ void SingularString::GenerateAllocateFromSizesCall(io::Printer* p) const {
           if (sizes[idx++] != 0) {
             set_$name$(std::move(tmp_str));
           }
+        }
+      )cc");
+
+}
+
+void SingularString::GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+        {
+          std::string tmp_str(sizes[idx], 'x');  // Preallocate needed size
+          if (sizes[idx++] != 0) {
+            set_$name$(std::move(tmp_str));
+          }
+          ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$().c_str())));
         }
       )cc");
 
@@ -928,7 +957,9 @@ class RepeatedString : public FieldGeneratorBase {
   void GenerateDSASeperatedSchemaCall(io::Printer* printer) const override;
   void GenerateScatterSizesCall(io::Printer* printer) const override;
   void GenerateScatterPtrsCall(io::Printer* printer) const override;
+  void GenerateScatterPtrsAndAllocateCall(io::Printer* printer) const override;
   void GenerateAllocateFromSizesCall(io::Printer* printer) const override;
+
   void GenerateAccessorDeclarations(io::Printer* p) const override;
   void GenerateInlineAccessorDefinitions(io::Printer* p) const override;
   void GenerateSerializeWithCachedSizesToArray(io::Printer* p) const override;
@@ -1045,6 +1076,31 @@ void RepeatedString::GenerateAllocateFromSizesCall(io::Printer* p) const {
     for (size_t i = 0; i < num_$name$_entries; ++i) {
         std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
         add_$name$(std::move(tmp_str));
+    }
+  )cc");
+}
+
+void RepeatedString::GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
+  ABSL_CHECK(!field_->options().has_ctype());
+
+  auto vars = AnnotatedAccessors(field_, {"", "set_allocated_"});
+  vars.push_back(Sub{
+      "release_name",
+      SafeFunctionName(field_->containing_type(), field_, "release_"),
+  }
+                     .AnnotatedAs(field_));
+  auto v1 = p->WithVars(vars);
+  auto v2 = p->WithVars(
+      AnnotatedAccessors(field_, {"set_"}, AnnotationCollector::kSet));
+  auto v3 = p->WithVars(
+      AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
+  p->Emit(R"cc(
+    size_t num_$name$_entries = sizes[idx++];
+    ptrs.push_back(nullptr);
+    for (size_t i = 0; i < num_$name$_entries; ++i) {
+        std::string tmp_str(sizes[idx++], 'x');  // Preallocate needed size
+        add_$name$(std::move(tmp_str));
+        ptrs.push_back(reinterpret_cast<uint8_t*>(const_cast<char*>($name$(i).c_str())));
     }
   )cc");
 }

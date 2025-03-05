@@ -332,7 +332,7 @@ class FieldGenerator {
 
   void GenerateScatterPtrsAndAllocateCall(io::Printer* p) const {
     auto vars = PushVarsForCall(p);
-    impl_->GenerateScatterPtrsCall(p);
+    impl_->GenerateScatterPtrsAndAllocateCall(p);
   }
 
   void GenerateScatterPtrsCall(io::Printer* p) const {
